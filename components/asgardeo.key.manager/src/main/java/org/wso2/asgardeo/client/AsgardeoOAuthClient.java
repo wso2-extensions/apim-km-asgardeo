@@ -334,6 +334,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public String getType() {
 
-        return AsgardeoConstants.CUSTOM_TYPE;
+        return AsgardeoConstants.ASGARDEO_TYPE;
     }
 }

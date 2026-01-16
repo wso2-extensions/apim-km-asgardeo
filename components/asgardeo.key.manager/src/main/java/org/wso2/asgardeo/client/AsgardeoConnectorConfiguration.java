@@ -23,6 +23,7 @@ import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Component(
@@ -55,13 +56,20 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
 
         List<ConfigurationDto> configurationDtoList = new ArrayList<ConfigurationDto>();
 
-        // todo add connection parameters that need to connect to the Custom KeymManager here
+        //COME BACK to change tooltip
+        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_ID, "Client ID", "input",
+                "Client ID of Application with Approved API", "", true, false,
+                Collections.emptyList(), false));
+
+        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_SECRET, "Client Secret", "input",
+                "Client Secret of Application with Approved API", "", true, true,
+                Collections.emptyList(), false));
 
         return configurationDtoList;
     }
 
     /*
-     *   Provides list of configurations need to create Oauth applications in Oauth server in Devportal
+     *   Provides list of configurations need to create Oauth applications in Oauth server in Dev portal
      *
      * */
     @Override
@@ -77,12 +85,20 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
     @Override
     public String getType() {
 
-        return AsgardeoConstants.CUSTOM_TYPE;
+        return AsgardeoConstants.ASGARDEO_TYPE;
     }
 
     @Override
     public String getDisplayName() {
 
         return AsgardeoConstants.DISPLAY_NAME;
+    }
+
+    public String getDefaultScopesClaim() {
+        return AsgardeoConstants.DEFAULT_SCOPES_CLAIM;
+    }
+
+    public String getDefaultConsumerKeyClaim() {
+        return AsgardeoConstants.DEFAULT_CONSUMER_KEY_CLAIM;
     }
 }

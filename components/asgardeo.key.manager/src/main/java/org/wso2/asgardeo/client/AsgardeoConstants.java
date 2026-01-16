@@ -18,12 +18,19 @@
 package org.wso2.asgardeo.client;
 
 /**
- * This class will hold constants related to Okta key manager implementation.
+ * This class will hold constants related to Asgardeo key manager implementation.
  */
 public class AsgardeoConstants {
     public static final String UTF_8 = "UTF-8";
-    public static final String CUSTOM_TYPE = "Custom";
-    public static final String DISPLAY_NAME = "Custom";
+    public static final String ASGARDEO_TYPE = "Asgardeo";
+    public static final String DISPLAY_NAME = "Asgardeo";
+
+    public static final String ORG_NAME = "org_name";
+    public static final String MGMT_CLIENT_ID = "mgmt_client_id";
+    public static final String MGMT_CLIENT_SECRET = "mgmt_client_secret";
+
+    public static final String DEFAULT_SCOPES_CLAIM = "scope";
+    public static final String DEFAULT_CONSUMER_KEY_CLAIM = "azp";
 
     AsgardeoConstants() {
     }
