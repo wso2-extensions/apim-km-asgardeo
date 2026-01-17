@@ -19,6 +19,9 @@ package org.wso2.asgardeo.client;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.asgardeo.client.model.AsgardeoDCRAuthInterceptor;
+import org.wso2.asgardeo.client.model.AsgardeoDCRClient;
+import org.wso2.asgardeo.client.model.AsgardeoTokenClient;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
@@ -30,6 +33,7 @@ import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
@@ -41,6 +45,8 @@ import java.util.*;
 public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     private static final Log log = LogFactory.getLog(AsgardeoOAuthClient.class);
+    private AsgardeoTokenClient tokenClient;
+    private AsgardeoDCRClient dcrClient;
 
     /**
      * {@code APIManagerComponent} calls this method, passing KeyManagerConfiguration as a {@code String}.
@@ -53,7 +59,33 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         this.configuration = keyManagerConfiguration;
 
-        // todo create client objects such as DCRClent, introspectionClient object to call Authorization Server
+        String org = (String) configuration.getParameter(AsgardeoConstants.ORG_NAME);
+        // COME BACK base url is hardcoded
+        String baseURL = "https://api.asgardeo.io";
+
+        String clientId = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_ID);
+        String clientSecret = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_SECRET);
+
+        //COME BACK endpoints are hardcoded
+        String tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
+        String dcrEndpoint = baseURL + "/t/" + org + "/api/identity/oauth2/dcr/v1.1/register";
+
+        tokenClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new FormEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .target(org.wso2.asgardeo.client.model.AsgardeoTokenClient.class, tokenEndpoint);
+
+        AsgardeoDCRAuthInterceptor interceptor = new AsgardeoDCRAuthInterceptor(tokenClient, clientId, clientSecret);
+
+        dcrClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new feign.gson.GsonEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .requestInterceptor(interceptor)
+                .target(AsgardeoDCRClient.class, dcrEndpoint);
     }
 
     /**
