@@ -31,11 +31,8 @@ import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.UnsupportedEncodingException;
+import java.util.*;
 
 /**
  * This class provides the implementation to use "Custom" Authorization Server for managing
@@ -335,5 +332,18 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public String getType() {
 
         return AsgardeoConstants.ASGARDEO_TYPE;
+    }
+
+    public static String getEncodedCredentials(String clientId, String clientSecret) throws APIManagementException {
+
+        String encodedCredentials;
+        try {
+            encodedCredentials = Base64.getEncoder().encodeToString((clientId + ":" + clientSecret)
+                    .getBytes(AsgardeoConstants.UTF_8));
+        } catch (UnsupportedEncodingException e) {
+            throw new APIManagementException(AsgardeoConstants.ERROR_ENCODING_METHOD_NOT_SUPPORTED, e);
+        }
+
+        return encodedCredentials;
     }
 }

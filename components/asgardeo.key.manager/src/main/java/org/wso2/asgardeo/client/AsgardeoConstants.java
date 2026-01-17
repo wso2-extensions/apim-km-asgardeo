@@ -32,6 +32,9 @@ public class AsgardeoConstants {
     public static final String DEFAULT_SCOPES_CLAIM = "scope";
     public static final String DEFAULT_CONSUMER_KEY_CLAIM = "azp";
 
+    public static final String ERROR_ENCODING_METHOD_NOT_SUPPORTED = "Encoding method is not supported";
+    public static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
+
     AsgardeoConstants() {
     }
 }
