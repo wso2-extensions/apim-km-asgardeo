@@ -56,6 +56,11 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
 
         List<ConfigurationDto> configurationDtoList = new ArrayList<ConfigurationDto>();
 
+        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.ORG_NAME, "Organization Name", "input",
+                "Name of the Organization with ", "", true, false,
+                Collections.emptyList(), false));
+
+
         //COME BACK to change tooltip
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_ID, "Client ID", "input",
                 "Client ID of Application with Approved API", "", true, false,
@@ -64,6 +69,8 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_SECRET, "Client Secret", "input",
                 "Client Secret of Application with Approved API", "", true, true,
                 Collections.emptyList(), false));
+
+
 
         return configurationDtoList;
     }

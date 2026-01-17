@@ -21,16 +21,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.asgardeo.client.model.AsgardeoDCRAuthInterceptor;
 import org.wso2.asgardeo.client.model.AsgardeoDCRClient;
+import org.wso2.asgardeo.client.model.AsgardeoDCRClientInfo;
 import org.wso2.asgardeo.client.model.AsgardeoTokenClient;
 import org.wso2.carbon.apimgt.api.APIManagementException;
-import org.wso2.carbon.apimgt.api.model.API;
-import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
-import org.wso2.carbon.apimgt.api.model.AccessTokenRequest;
-import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
-import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
-import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
-import org.wso2.carbon.apimgt.api.model.Scope;
-import org.wso2.carbon.apimgt.api.model.URITemplate;
+import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
@@ -97,8 +91,34 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public OAuthApplicationInfo createApplication(OAuthAppRequest oAuthAppRequest) throws APIManagementException {
 
-        //todo create oauth app in the authorization server
-        return null;
+        OAuthApplicationInfo in = oAuthAppRequest.getOAuthApplicationInfo();
+
+
+        String appName = in.getClientName();
+        String keyType = (String) in.getParameter(ApplicationConstants.APP_KEY_TYPE);
+        String user = (String) in.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
+
+        String clientName = (user != null ? user : "apim") + "_" + appName + (keyType != null ? "_" + keyType : "");
+
+        AsgardeoDCRClientInfo body =  new AsgardeoDCRClientInfo();
+
+        body.setClientName(clientName);
+
+        // COME BACK hardcoded grant types (client_credentials)
+        body.setGrantTypes(java.util.Collections.singletonList("client_credentials"));
+
+        body.setRedirectUris(java.util.Collections.singletonList("https://localhost"));
+
+        AsgardeoDCRClientInfo created = dcrClient.create(body);
+
+        OAuthApplicationInfo out = new OAuthApplicationInfo();
+        out.setClientName(clientName);
+        out.setClientId(created.getClientId());
+        out.setClientSecret(created.getClientSecret());
+        out.addParameter(ApplicationConstants.OAUTH_CLIENT_ID, created.getClientId());
+        out.addParameter(ApplicationConstants.OAUTH_CLIENT_SECRET, created.getClientSecret());
+
+        return out;
     }
 
     /**
