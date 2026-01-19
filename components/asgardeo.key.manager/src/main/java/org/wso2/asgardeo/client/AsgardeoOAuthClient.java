@@ -19,15 +19,14 @@ package org.wso2.asgardeo.client;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.asgardeo.client.model.AsgardeoDCRAuthInterceptor;
-import org.wso2.asgardeo.client.model.AsgardeoDCRClient;
-import org.wso2.asgardeo.client.model.AsgardeoDCRClientInfo;
-import org.wso2.asgardeo.client.model.AsgardeoTokenClient;
+import org.wso2.asgardeo.client.model.*;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
+import org.wso2.asgardeo.client.model.AsgardeoAccessTokenResponse;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
@@ -105,7 +104,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         body.setClientName(clientName);
 
         // COME BACK hardcoded grant types (client_credentials)
-        body.setGrantTypes(java.util.Collections.singletonList("client_credentials"));
+        List<String> grantTypes = new ArrayList<>();
+        if (in.getParameter(APIConstants.JSON_GRANT_TYPES) != null) {
+            grantTypes = Arrays.asList(((String) in.getParameter(APIConstants.JSON_GRANT_TYPES))
+                    .split(","));
+        }
+        body.setGrantTypes(grantTypes);
 
         body.setRedirectUris(java.util.Collections.singletonList("https://localhost"));
 
@@ -182,11 +186,39 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public AccessTokenInfo getNewApplicationAccessToken(AccessTokenRequest accessTokenRequest)
             throws APIManagementException {
 
-        AccessTokenInfo tokenInfo = new AccessTokenInfo();
+        String clientID = accessTokenRequest.getClientId();
+        String clientSecret = accessTokenRequest.getClientSecret();
 
-      // todo implement the logic to get a new access token
+        //COME BACK grant type default to client cred for mvp
+        String grantType = accessTokenRequest.getGrantType() != null
+                ? accessTokenRequest.getGrantType() : "client_credentials";
 
-        return tokenInfo;
+        //scopes handling if APIM passes a string[]
+        String scope = "";
+        if (accessTokenRequest.getScope() != null && accessTokenRequest.getScope().length > 0) {
+            scope = String.join(" ", accessTokenRequest.getScope());
+        }
+
+        String basicCredentials = getEncodedCredentials(clientID, clientSecret);
+
+        AsgardeoAccessTokenResponse retrievedToken = tokenClient.getAccessToken(grantType, scope, basicCredentials);
+
+        if(retrievedToken == null || retrievedToken.getAccessToken() == null || retrievedToken.getAccessToken().isEmpty())
+            throw new APIManagementException("Asgardeoeo token endpoint returned an empty token!");
+
+        // mapping response to apim  model
+        AccessTokenInfo response = new AccessTokenInfo();
+        response.setConsumerKey(clientID);
+        response.setConsumerSecret(clientSecret);
+        response.setAccessToken(retrievedToken.getAccessToken());
+        response.setValidityPeriod(retrievedToken.getExpiry());
+
+        if (retrievedToken.getScope() != null && !retrievedToken.getScope().isBlank()) {
+            response.setScope(retrievedToken.getScope().trim().split("\\s+"));
+        } else if (!scope.isBlank()) {
+            response.setScope(scope.trim().split("\\s+"));
+        }
+        return response;
     }
 
     /**
