@@ -122,6 +122,10 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         out.addParameter(ApplicationConstants.OAUTH_CLIENT_ID, created.getClientId());
         out.addParameter(ApplicationConstants.OAUTH_CLIENT_SECRET, created.getClientSecret());
 
+        if (created.getGrantTypes() != null && created.getGrantTypes().size() > 0) {
+            out.addParameter(APIConstants.JSON_GRANT_TYPES, String.join(" ", created.getGrantTypes()));
+        }
+
         return out;
     }
 
@@ -215,8 +219,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         if (retrievedToken.getScope() != null && !retrievedToken.getScope().isBlank()) {
             response.setScope(retrievedToken.getScope().trim().split("\\s+"));
-        } else if (!scope.isBlank()) {
-            response.setScope(scope.trim().split("\\s+"));
         }
         return response;
     }
