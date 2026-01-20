@@ -59,9 +59,18 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         String clientId = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_ID);
         String clientSecret = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_SECRET);
 
-        //COME BACK endpoints are hardcoded
-        String tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
-        String dcrEndpoint = baseURL + "/t/" + org + "/api/identity/oauth2/dcr/v1.1/register";
+        String dcrEndpoint;
+        if(configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null)
+            dcrEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT);
+        else
+            dcrEndpoint = baseURL + "/t/" + org + "/api/identity/oauth2/dcr/v1.1/register";
+
+        String tokenEndpoint;
+        if(configuration.getParameter(APIConstants.KeyManager.TOKEN_ENDPOINT) != null)
+            tokenEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.TOKEN_ENDPOINT);
+        else
+            tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
+
 
         tokenClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())

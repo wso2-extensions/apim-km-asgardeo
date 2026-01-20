@@ -45,7 +45,7 @@ public class AsgardeoDCRAuthInterceptor implements RequestInterceptor {
         try {
             String basicCredentials = AsgardeoOAuthClient.getEncodedCredentials(this.mgmtClientId, this.mgmtClientSecret);
             AsgardeoAccessTokenResponse accessTokenResponse =
-                    tokenClient.getAccessToken(AsgardeoConstants.GRANT_TYPE_CLIENT_CREDENTIALS,"internal_dcr_create",
+                    tokenClient.getAccessToken(AsgardeoConstants.GRANT_TYPE_CLIENT_CREDENTIALS,AsgardeoConstants.DCR_SCOPES,
                              basicCredentials);
             if (accessTokenResponse != null) {
                 this.cachedToken = accessTokenResponse;
