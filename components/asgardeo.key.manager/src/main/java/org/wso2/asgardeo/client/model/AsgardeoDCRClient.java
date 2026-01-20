@@ -16,7 +16,7 @@ public interface AsgardeoDCRClient {
 
     @RequestLine("PUT /{clientId}")
     @Headers("Content-Type: application/json")
-    AsgardeoDCRClientInfo update(@Param("clientId") String clientId) throws KeyManagerClientException;
+    AsgardeoDCRClientInfo update(@Param("clientId") String clientId, AsgardeoDCRClientInfo body) throws KeyManagerClientException;
 
     @RequestLine("DELETE /{clientId}")
     @Headers("Content-Type: application/json")

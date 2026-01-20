@@ -114,11 +114,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         body.setClientName(clientName);
 
-        List<String> grantTypes = new ArrayList<>();
-        if (in.getParameter(APIConstants.JSON_GRANT_TYPES) != null) {
-            grantTypes = Arrays.asList(((String) in.getParameter(APIConstants.JSON_GRANT_TYPES))
-                    .split(","));
-        }
+        List<String> grantTypes = getGrantTypesFromOAuthApp(in);
         body.setGrantTypes(grantTypes);
 
         body.setRedirectUris(java.util.Collections.singletonList("https://localhost"));
@@ -134,6 +130,16 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     }
 
     @NotNull
+    private static List<String> getGrantTypesFromOAuthApp(OAuthApplicationInfo in) {
+        List<String> grantTypes = new ArrayList<>();
+        if (in.getParameter(APIConstants.JSON_GRANT_TYPES) != null) {
+            grantTypes = Arrays.asList(((String) in.getParameter(APIConstants.JSON_GRANT_TYPES))
+                    .split(","));
+        }
+        return grantTypes;
+    }
+
+    @NotNull
     private static OAuthApplicationInfo createOAuthApplicationInfo(AsgardeoDCRClientInfo dcrClient) {
         OAuthApplicationInfo out = new OAuthApplicationInfo();
         out.setClientName(dcrClient.getClientName());
@@ -144,6 +150,10 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         if (dcrClient.getGrantTypes() != null && dcrClient.getGrantTypes().size() > 0) {
             out.addParameter(APIConstants.JSON_GRANT_TYPES, String.join(" ", dcrClient.getGrantTypes()));
+        }
+
+        if(dcrClient.getRedirectUris() != null && !dcrClient.getRedirectUris().isEmpty()){
+            out.setCallBackURL(String.join(",", dcrClient.getRedirectUris()));
         }
         return out;
     }
@@ -159,9 +169,25 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public OAuthApplicationInfo updateApplication(OAuthAppRequest oAuthAppRequest) throws APIManagementException {
 
-        //todo update oauth app in the authorization server
+        OAuthApplicationInfo in = oAuthAppRequest.getOAuthApplicationInfo();
 
-        return null;
+        AsgardeoDCRClientInfo body = new AsgardeoDCRClientInfo();
+
+        body.setGrantTypes(getGrantTypesFromOAuthApp(in));
+
+        if(in.getCallBackURL() != null && !in.getCallBackURL().isBlank()){
+            body.setRedirectUris(Arrays.asList(in.getCallBackURL().split(",")));
+        }
+
+        try {
+            AsgardeoDCRClientInfo updated = dcrClient.update(in.getClientId(), body);
+
+            return createOAuthApplicationInfo(updated);
+        } catch (KeyManagerClientException e) {
+            handleException("Could not update service provider with ID: "+in.getClientId(), e);
+            return null;
+        }
+
     }
 
     @Override

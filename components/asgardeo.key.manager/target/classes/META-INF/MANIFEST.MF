@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1768816733005
+Bnd-LastModified: 1768891128716
 Build-Jdk: 11.0.29
 Built-By: shakthi
 Bundle-Description: WSO2 is an open source application development softw
@@ -17,7 +17,7 @@ DynamicImport-Package: *
 Export-Package: org.wso2.asgardeo.client;version="1.0.0.SNAPSHOT";uses:=
  "org.wso2.carbon.apimgt.api,org.wso2.carbon.apimgt.api.model,org.wso2.c
  arbon.apimgt.impl",org.wso2.asgardeo.client.model;version="1.0.0.SNAPSH
- OT";uses:=feign
+ OT";uses:="feign,org.wso2.carbon.apimgt.impl.kmclient"
 Import-Package: com.google.gson.annotations;version="[2.1,3)",org.wso2.c
  arbon.apimgt.api;version="[6.7.0,10.0.0)",org.wso2.carbon.apimgt.api.mo
  del;version="[6.7.0,10.0.0)",org.wso2.carbon.apimgt.impl;version="[6.7.
