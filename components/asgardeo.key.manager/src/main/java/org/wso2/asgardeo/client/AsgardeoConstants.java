@@ -35,7 +35,8 @@ public class AsgardeoConstants {
     public static final String ERROR_ENCODING_METHOD_NOT_SUPPORTED = "Encoding method is not supported";
     public static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
-    public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view internal_dcr_update internal_dcr_delete";
+    public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view internal_dcr_update internal_dcr_delete " +
+            "internal_application_mgt_view internal_application_mgt_update";
     AsgardeoConstants() {
     }
 }

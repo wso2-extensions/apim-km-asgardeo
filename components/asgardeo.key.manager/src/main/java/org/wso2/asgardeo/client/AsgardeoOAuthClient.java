@@ -32,6 +32,7 @@ import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class provides the implementation to use "Custom" Authorization Server for managing
@@ -42,6 +43,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     private static final Log log = LogFactory.getLog(AsgardeoOAuthClient.class);
     private AsgardeoTokenClient tokenClient;
     private AsgardeoDCRClient dcrClient;
+    private AsgardeoAppListClient appListClient;
+    private AsgardeoOIDCInboundClient oidcInboundClient;
+    private Map<String, String> appIdMap;
 
     /**
      * {@code APIManagerComponent} calls this method, passing KeyManagerConfiguration as a {@code String}.
@@ -54,6 +58,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         this.configuration = keyManagerConfiguration;
 
+        appIdMap = new ConcurrentHashMap<>(); //map for app id
         String org = (String) configuration.getParameter(AsgardeoConstants.ORG_NAME);
         // COME BACK base url is hardcoded
         String baseURL = "https://api.asgardeo.io";
@@ -73,6 +78,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         else
             tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
 
+        // for JWT conversion - Application management API endpoint
+        String applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1";
 
         tokenClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -90,6 +97,24 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .logger(new feign.slf4j.Slf4jLogger())
                 .requestInterceptor(interceptor)
                 .target(AsgardeoDCRClient.class, dcrEndpoint);
+
+        appListClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new feign.gson.GsonEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .requestInterceptor(interceptor)
+                .target(AsgardeoAppListClient.class, applicationsServerBase);
+
+        oidcInboundClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new feign.gson.GsonEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .requestInterceptor(interceptor)
+                .target(AsgardeoOIDCInboundClient.class, applicationsServerBase);
+
+
     }
 
     /**
@@ -122,11 +147,80 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         try {
             AsgardeoDCRClientInfo created = dcrClient.create(body);
 
+            tryChangeAccessTokenToJWT(created, oAuthAppRequest);
+
             return createOAuthApplicationInfo(created);
         } catch (KeyManagerClientException e) {
            handleException("Cannot create OAuth Application: "+clientName+ " for Application "+appName, e);
            return null;
         }
+    }
+
+    private void tryChangeAccessTokenToJWT(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) throws APIManagementException {
+        try{
+            String appId = resolveAppIdByClientId(created.getClientId());
+
+            AsgardeoOIDCInboundRequest inboundRequest = buildInboundPayload(created, oAuthAppRequest);
+
+            try {
+                oidcInboundClient.updateOidcInbound(appId, inboundRequest);
+            }catch(feign.FeignException e){
+                log.warn("Failed to update OIDC config to JWT for client ID : "+created.getClientId()
+                + " (app ID : "+appId+"). Falling back to Opaque type. HTTP "+e.status() +" body=" +e.contentUTF8());
+            }
+
+            created.setId(appId);
+        }catch(APIManagementException e){
+            handleException("Could not change access token of service provider with ID : "+created.getClientId(), e);
+        }
+    }
+
+    private AsgardeoOIDCInboundRequest buildInboundPayload(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) {
+        AsgardeoOIDCInboundRequest toBeBuilt = new AsgardeoOIDCInboundRequest();
+
+        toBeBuilt.setClientId(created.getClientId());
+        toBeBuilt.setGrantTypes(created.getGrantTypes());
+        toBeBuilt.setAllowedOrigins(Collections.emptyList());
+
+        AsgardeoOIDCInboundRequest.AccessToken accessToken = new AsgardeoOIDCInboundRequest.AccessToken("JWT", 3600, 3600);
+
+        toBeBuilt.setAccessToken(accessToken);
+        return toBeBuilt;
+    }
+
+    // this method also provides fast lookup if the app id exists
+    private String resolveAppIdByClientId(String clientId) throws APIManagementException{
+        int limit = 300;
+        int offset = 0;
+
+        String appId = appIdMap.get(clientId); //first go through the map to see if it exists
+
+        if(appId != null)
+            return appId;
+
+        // will loop through the results 300 at a time to be safe
+        while(true){
+            AsgardeoApplicationsResponse page = appListClient.list(limit, "clientId", offset);
+
+            if (page.getApplications() != null){
+                for(AsgardeoApplicationsResponse.App app : page.getApplications()){
+
+                    String retrievedClientId = app.getClientId();
+                    appIdMap.put(retrievedClientId, app.getId());
+
+                    if(clientId.equals(retrievedClientId)){
+                        return app.getId();
+                    }
+                }
+            }
+
+            int returnedResultsCount = page.getCount();
+            if(returnedResultsCount <= 0) break;
+
+            offset += returnedResultsCount;
+        }
+
+        throw new APIManagementException("Could not find Asgardeo Application ID for Client ID : "+clientId);
     }
 
     @NotNull
@@ -155,6 +249,10 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         if(dcrClient.getRedirectUris() != null && !dcrClient.getRedirectUris().isEmpty()){
             out.setCallBackURL(String.join(",", dcrClient.getRedirectUris()));
         }
+
+        //put app id in OAuthApplicationInfo if needed later
+        if(dcrClient.getId() != null)
+            out.addParameter(APIConstants.JSON_ADDITIONAL_PROPERTIES, new HashMap<>().put("asgardeoAppId", dcrClient.getId()));
         return out;
     }
 
@@ -181,6 +279,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         try {
             AsgardeoDCRClientInfo updated = dcrClient.update(in.getClientId(), body);
+
+            try {
+                String appId = resolveAppIdByClientId(in.getClientId());
+                updated.setId(appId);
+            }catch (APIManagementException e){
+                System.out.println("Couldn't find app Id");
+            }
 
             return createOAuthApplicationInfo(updated);
         } catch (KeyManagerClientException e) {
@@ -227,6 +332,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
             if(retrieved == null)
                 return null;
+
+            try {
+                String appId = resolveAppIdByClientId(clientId);
+                retrieved.setId(appId);
+            }catch (APIManagementException e){
+                System.out.println("Couldn't find app Id");
+            }
 
             return createOAuthApplicationInfo(retrieved);
         } catch (KeyManagerClientException e) {

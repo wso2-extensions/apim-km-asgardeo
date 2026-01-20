@@ -6,6 +6,8 @@ import java.util.List;
 
 public class AsgardeoDCRClientInfo {
 
+    @SerializedName("id")
+    private String id;
     @SerializedName("client_id")
     private String clientId;
 
@@ -35,4 +37,12 @@ public class AsgardeoDCRClientInfo {
 
     public String getClientSecret() { return clientSecret; }
     public void setClientSecret(String clientSecret) { this.clientSecret = clientSecret; }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

@@ -4,16 +4,23 @@ import java.util.List;
 
 public class AsgardeoOIDCInboundRequest {
     private String clientId;
-    private String clientSecret;
     private java.util.List<String> grantTypes;
-    private java.util.List<String> callbackURLs;
     private java.util.List<String> allowedOrigins;
     private AccessToken accessToken;
 
     public static class AccessToken {
         private String type;
-        public AccessToken(String type) { this.type = type; }
+        private int userAccessTokenExpiryInSeconds;
+        private int applicationAccessTokenExpiryInSeconds;
+
+        public AccessToken(String type, int userAccessTokenExpiryInSeconds, int applicationAccessTokenExpiryInSeconds) {
+            this.type = type;
+            this.userAccessTokenExpiryInSeconds = userAccessTokenExpiryInSeconds;
+            this.applicationAccessTokenExpiryInSeconds = applicationAccessTokenExpiryInSeconds;
+        }
+
         public AccessToken() {}
+
 
         public String getType() {
             return type;
@@ -21,6 +28,22 @@ public class AsgardeoOIDCInboundRequest {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public int getUserAccessTokenExpiryInSeconds() {
+            return userAccessTokenExpiryInSeconds;
+        }
+
+        public void setUserAccessTokenExpiryInSeconds(int userAccessTokenExpiryInSeconds) {
+            this.userAccessTokenExpiryInSeconds = userAccessTokenExpiryInSeconds;
+        }
+
+        public int getApplicationAccessTokenExpiryInSeconds() {
+            return applicationAccessTokenExpiryInSeconds;
+        }
+
+        public void setApplicationAccessTokenExpiryInSeconds(int applicationAccessTokenExpiryInSeconds) {
+            this.applicationAccessTokenExpiryInSeconds = applicationAccessTokenExpiryInSeconds;
         }
     }
 
@@ -32,13 +55,13 @@ public class AsgardeoOIDCInboundRequest {
         this.clientId = clientId;
     }
 
-    public String getClientSecret() {
-        return clientSecret;
-    }
-
-    public void setClientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
-    }
+//    public String getClientSecret() {
+//        return clientSecret;
+//    }
+//
+//    public void setClientSecret(String clientSecret) {
+//        this.clientSecret = clientSecret;
+//    }
 
     public List<String> getGrantTypes() {
         return grantTypes;
@@ -46,14 +69,6 @@ public class AsgardeoOIDCInboundRequest {
 
     public void setGrantTypes(List<String> grantTypes) {
         this.grantTypes = grantTypes;
-    }
-
-    public List<String> getCallbackURLs() {
-        return callbackURLs;
-    }
-
-    public void setCallbackURLs(List<String> callbackURLs) {
-        this.callbackURLs = callbackURLs;
     }
 
     public List<String> getAllowedOrigins() {
