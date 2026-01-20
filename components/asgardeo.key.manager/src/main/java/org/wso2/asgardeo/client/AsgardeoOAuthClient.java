@@ -19,6 +19,7 @@ package org.wso2.asgardeo.client;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
 import org.wso2.asgardeo.client.model.*;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.*;
@@ -27,6 +28,7 @@ import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
 import org.wso2.asgardeo.client.model.AsgardeoAccessTokenResponse;
+import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
@@ -112,7 +114,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         body.setClientName(clientName);
 
-        // COME BACK hardcoded grant types (client_credentials)
         List<String> grantTypes = new ArrayList<>();
         if (in.getParameter(APIConstants.JSON_GRANT_TYPES) != null) {
             grantTypes = Arrays.asList(((String) in.getParameter(APIConstants.JSON_GRANT_TYPES))
@@ -122,19 +123,28 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         body.setRedirectUris(java.util.Collections.singletonList("https://localhost"));
 
-        AsgardeoDCRClientInfo created = dcrClient.create(body);
+        try {
+            AsgardeoDCRClientInfo created = dcrClient.create(body);
 
-        OAuthApplicationInfo out = new OAuthApplicationInfo();
-        out.setClientName(clientName);
-        out.setClientId(created.getClientId());
-        out.setClientSecret(created.getClientSecret());
-        out.addParameter(ApplicationConstants.OAUTH_CLIENT_ID, created.getClientId());
-        out.addParameter(ApplicationConstants.OAUTH_CLIENT_SECRET, created.getClientSecret());
-
-        if (created.getGrantTypes() != null && created.getGrantTypes().size() > 0) {
-            out.addParameter(APIConstants.JSON_GRANT_TYPES, String.join(" ", created.getGrantTypes()));
+            return createOAuthApplicationInfo(created);
+        } catch (KeyManagerClientException e) {
+           handleException("Cannot create OAuth Application: "+clientName+ " for Application "+appName, e);
+           return null;
         }
+    }
 
+    @NotNull
+    private static OAuthApplicationInfo createOAuthApplicationInfo(AsgardeoDCRClientInfo dcrClient) {
+        OAuthApplicationInfo out = new OAuthApplicationInfo();
+        out.setClientName(dcrClient.getClientName());
+        out.setClientId(dcrClient.getClientId());
+        out.setClientSecret(dcrClient.getClientSecret());
+        out.addParameter(ApplicationConstants.OAUTH_CLIENT_ID, dcrClient.getClientId());
+        out.addParameter(ApplicationConstants.OAUTH_CLIENT_SECRET, dcrClient.getClientSecret());
+
+        if (dcrClient.getGrantTypes() != null && dcrClient.getGrantTypes().size() > 0) {
+            out.addParameter(APIConstants.JSON_GRANT_TYPES, String.join(" ", dcrClient.getGrantTypes()));
+        }
         return out;
     }
 
@@ -169,9 +179,11 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
      */
     @Override
     public void deleteApplication(String clientId) throws APIManagementException {
-
-        //todo delete oauth app in the authorization server
-
+        try {
+            dcrClient.delete(clientId);
+        } catch (KeyManagerClientException e) {
+            handleException("Cannot remove service provider for the given ID : " + clientId, e);
+        }
     }
 
     /**
@@ -184,8 +196,18 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public OAuthApplicationInfo retrieveApplication(String clientId) throws APIManagementException {
 
-        //todo retrieve oauth app in the authorization server
-        return null;
+        try {
+            AsgardeoDCRClientInfo retrieved = dcrClient.get(clientId);
+
+            if(retrieved == null)
+                return null;
+
+            return createOAuthApplicationInfo(retrieved);
+        } catch (KeyManagerClientException e) {
+            handleException("Cannot retrieve service provider for the given ID : "+clientId, e);
+            return null;
+        }
+
     }
 
     /**
