@@ -1,6 +1,7 @@
 package org.wso2.asgardeo.client.model;
 
 import feign.Headers;
+import feign.Param;
 import feign.RequestLine;
 
 public interface AsgardeoOIDCInboundClient {
