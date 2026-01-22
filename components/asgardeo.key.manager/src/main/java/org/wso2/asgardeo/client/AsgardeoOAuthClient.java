@@ -18,6 +18,7 @@
 package org.wso2.asgardeo.client;
 
 import feign.FeignException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
@@ -291,7 +292,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         body.setGrantTypes(getGrantTypesFromOAuthApp(in));
 
-        if(in.getCallBackURL() != null && !in.getCallBackURL().isBlank()){
+        if(in.getCallBackURL() != null && !StringUtils.isBlank(in.getCallBackURL())){
             body.setRedirectUris(Arrays.asList(in.getCallBackURL().split(",")));
         }
 
@@ -405,7 +406,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         response.setValidityPeriod(retrievedToken.getExpiry());
         response.setKeyManager(getType());
 
-        if (retrievedToken.getScope() != null && !retrievedToken.getScope().isBlank()) {
+        if (retrievedToken.getScope() != null && !StringUtils.isBlank(retrievedToken.getScope())) {
             response.setScope(retrievedToken.getScope().trim().split("\\s+"));
         }
         return response;
@@ -492,7 +493,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         if(response.getClientId() != null)
             tokenInfo.setConsumerKey(response.getClientId());
 
-        if(response.getScope() != null && !response.getScope().isBlank())
+        if(response.getScope() != null && !StringUtils.isBlank(response.getScope()))
             tokenInfo.setScope(response.getScope().trim().split("\\s+"));
         else
             tokenInfo.setScope(new String[0]);
