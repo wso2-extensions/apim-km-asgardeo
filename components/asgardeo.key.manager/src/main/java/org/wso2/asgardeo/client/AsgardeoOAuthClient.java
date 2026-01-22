@@ -17,6 +17,7 @@
  */
 package org.wso2.asgardeo.client;
 
+import feign.FeignException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,6 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
-import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
 import org.wso2.asgardeo.client.model.AsgardeoAccessTokenResponse;
 import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
@@ -41,11 +41,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     private static final Log log = LogFactory.getLog(AsgardeoOAuthClient.class);
+
     private AsgardeoTokenClient tokenClient;
     private AsgardeoDCRClient dcrClient;
     private AsgardeoAppListClient appListClient;
     private AsgardeoOIDCInboundClient oidcInboundClient;
+    private AsgardeoIntrospectionClient introspectionClient;
     private Map<String, String> appIdMap;
+
+    private String mgmtClientId, mgmtClientSecret; //client id and secret of app management api authorized
 
     /**
      * {@code APIManagerComponent} calls this method, passing KeyManagerConfiguration as a {@code String}.
@@ -63,8 +67,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         // COME BACK base url is hardcoded
         String baseURL = "https://api.asgardeo.io";
 
-        String clientId = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_ID);
-        String clientSecret = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_SECRET);
+        mgmtClientId = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_ID);
+        mgmtClientSecret = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_SECRET);
 
         String dcrEndpoint;
         if(configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null)
@@ -78,6 +82,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         else
             tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
 
+        String introspectionEndpoint;
+        if(configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT) != null)
+            introspectionEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT);
+        else
+            introspectionEndpoint = baseURL + "/t/" + org + "/oauth2/introspect";
+
         // for JWT conversion - Application management API endpoint
         String applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1";
 
@@ -86,9 +96,17 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .encoder(new FormEncoder())
                 .decoder(new feign.gson.GsonDecoder())
                 .logger(new feign.slf4j.Slf4jLogger())
-                .target(org.wso2.asgardeo.client.model.AsgardeoTokenClient.class, tokenEndpoint);
+                .target(AsgardeoTokenClient.class, tokenEndpoint);
 
-        AsgardeoDCRAuthInterceptor interceptor = new AsgardeoDCRAuthInterceptor(tokenClient, clientId, clientSecret);
+        introspectionClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new FormEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .target(AsgardeoIntrospectionClient.class, introspectionEndpoint);
+
+
+        AsgardeoDCRAuthInterceptor interceptor = new AsgardeoDCRAuthInterceptor(tokenClient, mgmtClientId, mgmtClientSecret);
 
         dcrClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -385,6 +403,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         response.setConsumerSecret(clientSecret);
         response.setAccessToken(retrievedToken.getAccessToken());
         response.setValidityPeriod(retrievedToken.getExpiry());
+        response.setKeyManager(getType());
 
         if (retrievedToken.getScope() != null && !retrievedToken.getScope().isBlank()) {
             response.setScope(retrievedToken.getScope().trim().split("\\s+"));
@@ -432,9 +451,69 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             log.debug(String.format("Getting access token metadata from authorization server. Access token %s",
                     accessToken));
         }
+
         AccessTokenInfo tokenInfo = new AccessTokenInfo();
-// todo implemnt logic to get access token meta data from the introspect endpoint
+
+        tokenInfo.setAccessToken(accessToken);
+        tokenInfo.setKeyManager(getType());
+        tokenInfo.setTokenState("UNKNOWN"); //default value changes later
+
+        String basicCredentials = getEncodedCredentials(mgmtClientId, mgmtClientSecret);
+
+        AsgardeoIntrospectionResponse response;
+
+        try {
+            response = introspectionClient.introspect(accessToken, basicCredentials);
+        } catch (KeyManagerClientException e) {
+            throw new APIManagementException("Error occurred in token introspection!", e);
+        } catch(FeignException e){
+
+            tokenInfo.setTokenValid(false);
+            tokenInfo.setTokenState(AsgardeoConstants.TOKEN_STATE_INTROSPECTION_FAILED);
+            tokenInfo.setErrorcode(APIConstants.KeyValidationStatus.API_AUTH_GENERAL_ERROR);
+            tokenInfo.addParameter("httpStatus", e.status());
+            tokenInfo.addParameter("errorBody", e.contentUTF8());
+            handleException("Introspection Failed!", e);
             return tokenInfo;
+        }
+
+        if(response == null || !response.isActive()){
+            tokenInfo.setTokenValid(false);
+            tokenInfo.setTokenState(AsgardeoConstants.TOKEN_STATE_INACTIVE);
+            tokenInfo.setErrorcode(APIConstants.KeyValidationStatus.API_AUTH_INVALID_CREDENTIALS);
+            return tokenInfo;
+        }
+
+        //token is active if hits here
+        tokenInfo.setTokenValid(true);
+        tokenInfo.setTokenState(AsgardeoConstants.TOKEN_STATE_ACTIVE);
+        tokenInfo.setApplicationToken(AsgardeoConstants.TOKEN_APPLICATION.equalsIgnoreCase(response.getAut()));
+
+        if(response.getClientId() != null)
+            tokenInfo.setConsumerKey(response.getClientId());
+
+        if(response.getScope() != null && !response.getScope().isBlank())
+            tokenInfo.setScope(response.getScope().trim().split("\\s+"));
+        else
+            tokenInfo.setScope(new String[0]);
+
+        if(response.getIat() != null) //issued at
+            tokenInfo.setIssuedTime(response.getIat() * 1000L);
+
+        if(response.getExp() != null){ //expiry
+            long nowSec = System.currentTimeMillis() / 1000L;
+            long validitySec = Math.max(0, response.getExp() - nowSec);
+            tokenInfo.setValidityPeriod(validitySec);
+            tokenInfo.addParameter("exp", response.getExp()); //keeping it in parameters optionally
+        }
+
+        tokenInfo.addParameter("token_type", response.getTokenType());
+        if (response.getIss() != null) tokenInfo.addParameter("iss", response.getIss());
+        if (response.getAud() != null) tokenInfo.addParameter("aud", response.getAud());
+        if (response.getSub() != null) tokenInfo.addParameter("sub", response.getSub());
+        if (response.getJti() != null) tokenInfo.addParameter("jti", response.getJti());
+
+        return tokenInfo;
     }
 
     @Override
@@ -513,19 +592,20 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public Map<String, Set<Scope>> getScopesForAPIS(String apiIdsString) throws APIManagementException {
 
-        Map<String, Set<Scope>> apiToScopeMapping = new HashMap<>();
-        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        Map<String, Set<String>> apiToScopeKeyMapping = apiMgtDAO.getScopesForAPIS(apiIdsString);
-        for (String apiId : apiToScopeKeyMapping.keySet()) {
-            Set<Scope> apiScopes = new LinkedHashSet<>();
-            Set<String> scopeKeys = apiToScopeKeyMapping.get(apiId);
-            for (String scopeKey : scopeKeys) {
-                Scope scope = getScopeByName(scopeKey);
-                apiScopes.add(scope);
-            }
-            apiToScopeMapping.put(apiId, apiScopes);
-        }
-        return apiToScopeMapping;
+//        Map<String, Set<Scope>> apiToScopeMapping = new HashMap<>();
+//        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+//        Map<String, Set<String>> apiToScopeKeyMapping = apiMgtDAO.getScopesForAPIS(apiIdsString);
+//        for (String apiId : apiToScopeKeyMapping.keySet()) {
+//            Set<Scope> apiScopes = new LinkedHashSet<>();
+//            Set<String> scopeKeys = apiToScopeKeyMapping.get(apiId);
+//            for (String scopeKey : scopeKeys) {
+//                Scope scope = getScopeByName(scopeKey);
+//                apiScopes.add(scope);
+//            }
+//            apiToScopeMapping.put(apiId, apiScopes);
+//        }
+//        return apiToScopeMapping;
+        return null;
     }
 
     @Override

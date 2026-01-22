@@ -37,6 +37,12 @@ public class AsgardeoConstants {
 
     public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view internal_dcr_update internal_dcr_delete " +
             "internal_application_mgt_view internal_application_mgt_update";
+    public static final String TOKEN_APPLICATION = "APPLICATION";
+    public static final String TOKEN_STATE_INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
+    public static final String TOKEN_STATE_ACTIVE = "ACTIVE";
+    public static final String TOKEN_STATE_INACTIVE = "INACTIVE";
+
+
     AsgardeoConstants() {
     }
 }
