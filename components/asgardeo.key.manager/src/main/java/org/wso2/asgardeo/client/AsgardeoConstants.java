@@ -28,6 +28,8 @@ public class AsgardeoConstants {
     public static final String ORG_NAME = "org_name";
     public static final String MGMT_CLIENT_ID = "mgmt_client_id";
     public static final String MGMT_CLIENT_SECRET = "mgmt_client_secret";
+    public static final String ACCESS_TOKEN_TYPE = "access_token_type"; //for JWT or opaque (default) token selection
+    public static final String JWT = "JWT";
 
     public static final String DEFAULT_SCOPES_CLAIM = "scope";
     public static final String DEFAULT_CONSUMER_KEY_CLAIM = "azp";

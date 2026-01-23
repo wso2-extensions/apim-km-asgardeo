@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1768990393354
+Bnd-LastModified: 1769060486681
 Build-Jdk: 11.0.29
 Built-By: shakthi
 Bundle-Description: WSO2 is an open source application development softw
@@ -25,10 +25,11 @@ Import-Package: com.google.gson.annotations;version="[2.1,3)",org.wso2.c
  ",feign;resolution:=optional;version="[13.2,14)",feign.codec;resolution
  :=optional;version="[13.2,14)",feign.gson;resolution:=optional;version=
  "[13.2,14)",feign.okhttp;resolution:=optional;version="[13.2,14)",feign
- .slf4j;resolution:=optional;version="[13.2,14)",org.apache.commons.logg
- ing;resolution:=optional;version="[1.2,2)",org.wso2.asgardeo.client;res
- olution:=optional;version="[1.0,2)",org.wso2.asgardeo.client.model;reso
- lution:=optional;version="[1.0,2)"
+ .slf4j;resolution:=optional;version="[13.2,14)",org.apache.commons.lang
+ ;resolution:=optional;version="[2.6,3)",org.apache.commons.logging;reso
+ lution:=optional;version="[1.2,2)",org.wso2.asgardeo.client;resolution:
+ =optional;version="[1.0,2)",org.wso2.asgardeo.client.model;resolution:=
+ optional;version="[1.0,2)"
 Provide-Capability: osgi.service;objectClass:List<String>="org.wso2.carb
  on.apimgt.api.model.KeyManagerConnectorConfiguration"
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"

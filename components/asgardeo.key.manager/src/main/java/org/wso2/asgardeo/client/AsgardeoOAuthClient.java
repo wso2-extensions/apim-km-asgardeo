@@ -52,6 +52,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     private String mgmtClientId, mgmtClientSecret; //client id and secret of app management api authorized
 
+    private boolean issueJWTTokens;
+
     /**
      * {@code APIManagerComponent} calls this method, passing KeyManagerConfiguration as a {@code String}.
      *
@@ -71,6 +73,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         mgmtClientId = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_ID);
         mgmtClientSecret = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_SECRET);
 
+        if(configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE) != null)
+            issueJWTTokens = (boolean) configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE);
+        else issueJWTTokens = false; //default to opaque
         String dcrEndpoint;
         if(configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null)
             dcrEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT);
@@ -166,7 +171,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         try {
             AsgardeoDCRClientInfo created = dcrClient.create(body);
 
-            tryChangeAccessTokenToJWT(created, oAuthAppRequest);
+            if (issueJWTTokens)
+                tryChangeAccessTokenToJWT(created, oAuthAppRequest);
 
             return createOAuthApplicationInfo(created);
         } catch (KeyManagerClientException e) {
@@ -299,12 +305,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         try {
             AsgardeoDCRClientInfo updated = dcrClient.update(in.getClientId(), body);
 
-            try {
-                String appId = resolveAppIdByClientId(in.getClientId());
-                updated.setId(appId);
-            }catch (APIManagementException e){
-                System.out.println("Couldn't find app Id");
-            }
+//            try {
+//                String appId = resolveAppIdByClientId(in.getClientId());
+//                updated.setId(appId);
+//            }catch (APIManagementException e){
+//                System.out.println("Couldn't find app Id");
+//            }
 
             return createOAuthApplicationInfo(updated);
         } catch (KeyManagerClientException e) {
@@ -352,12 +358,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             if(retrieved == null)
                 return null;
 
-            try {
-                String appId = resolveAppIdByClientId(clientId);
-                retrieved.setId(appId);
-            }catch (APIManagementException e){
-                System.out.println("Couldn't find app Id");
-            }
+//            try {
+//                String appId = resolveAppIdByClientId(clientId);
+//                retrieved.setId(appId);
+//            }catch (APIManagementException e){
+//                System.out.println("Couldn't find app Id");
+//            }
 
             return createOAuthApplicationInfo(retrieved);
         } catch (KeyManagerClientException e) {

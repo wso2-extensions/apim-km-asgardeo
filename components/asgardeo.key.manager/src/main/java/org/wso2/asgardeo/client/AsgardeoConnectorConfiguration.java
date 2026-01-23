@@ -23,6 +23,7 @@ import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,7 +71,8 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
                 "Client Secret of Application with Approved API", "", true, true,
                 Collections.emptyList(), false));
 
-
+        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.ACCESS_TOKEN_TYPE, "Prefer JWT Access Tokens", "checkbox",
+                "Choose to use JWT instead of Opaque as the Access Token Type", "Enable", false, false, Collections.singletonList("Enable"), false));
 
         return configurationDtoList;
     }
