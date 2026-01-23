@@ -419,32 +419,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     }
 
     /**
-     * This is used to build accesstoken request from OAuth application info.
-     *
-     * @param oAuthApplication OAuth application details.
-     * @param tokenRequest     AccessTokenRequest that is need to be updated with addtional info.
-     * @return AccessTokenRequest after adding OAuth application details.
-     * @throws APIManagementException This is the custom exception class for API management.
-     */
-    @Override
-    public AccessTokenRequest buildAccessTokenRequestFromOAuthApp(
-            OAuthApplicationInfo oAuthApplication, AccessTokenRequest tokenRequest) throws APIManagementException {
-
-        log.debug("Invoking buildAccessTokenRequestFromOAuthApp() method..");
-        if (oAuthApplication == null) {
-            return tokenRequest;
-        }
-        if (tokenRequest == null) {
-            tokenRequest = new AccessTokenRequest();
-        }
-       // todo implement logic to build an access token request
-
-        return tokenRequest;
-    }
-
-
-
-    /**
      * This is used to get the meta data of the accesstoken.
      *
      * @param accessToken AccessToken.
@@ -508,10 +482,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             tokenInfo.setIssuedTime(response.getIat() * 1000L);
 
         if(response.getExp() != null){ //expiry
-            long nowSec = System.currentTimeMillis() / 1000L;
-            long validitySec = Math.max(0, response.getExp() - nowSec);
-            tokenInfo.setValidityPeriod(validitySec);
-            tokenInfo.addParameter("exp", response.getExp()); //keeping it in parameters optionally
+            long validityMillis = Math.max(0, response.getExp()*1000L - System.currentTimeMillis());
+            tokenInfo.setValidityPeriod(validityMillis);
+            tokenInfo.addParameter("exp", response.getExp()*1000L); //keeping it in parameters optionally
         }
 
         tokenInfo.addParameter("token_type", response.getTokenType());
