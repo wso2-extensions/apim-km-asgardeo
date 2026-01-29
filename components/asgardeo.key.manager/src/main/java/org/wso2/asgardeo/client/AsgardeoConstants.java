@@ -44,6 +44,9 @@ public class AsgardeoConstants {
     public static final String TOKEN_STATE_ACTIVE = "ACTIVE";
     public static final String TOKEN_STATE_INACTIVE = "INACTIVE";
 
+    public static final String GLOBAL_API_RESOURCE_NAME = "APIM_GLOBAL_SCOPES";
+    public static final String GLOBAL_API_RESOURCE_DISPLAY_NAME = "APIM Global Scopes";
+    public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "apim-global-scopes";
 
     AsgardeoConstants() {
     }
