@@ -152,7 +152,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         OAuthApplicationInfo in = oAuthAppRequest.getOAuthApplicationInfo();
 
-
         String appName = in.getClientName();
         String keyType = (String) in.getParameter(ApplicationConstants.APP_KEY_TYPE);
         String user = (String) in.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
@@ -165,8 +164,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         List<String> grantTypes = getGrantTypesFromOAuthApp(in);
         body.setGrantTypes(grantTypes);
-
-        body.setRedirectUris(java.util.Collections.singletonList("https://localhost"));
+      //  log.info("APIM Callback uRL : "+in.getCallBackURL());
+        body.setRedirectUris(java.util.Collections.singletonList("https://localhost:9443"));
 
         try {
             AsgardeoDCRClientInfo created = dcrClient.create(body);
@@ -518,7 +517,14 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public OAuthApplicationInfo mapOAuthApplication(OAuthAppRequest oAuthAppRequest) throws APIManagementException {
 
-        return oAuthAppRequest.getOAuthApplicationInfo();
+        OAuthApplicationInfo toMap = oAuthAppRequest.getOAuthApplicationInfo();
+        String clientId = toMap.getClientId();
+        String clientSecret = toMap.getClientSecret();
+        OAuthApplicationInfo retrieved = retrieveApplication(clientId);
+
+        if (!retrieved.getClientSecret().equals(clientSecret))
+            throw new APIManagementException("Error when mapping.");
+        return retrieved;
     }
 
     @Override
