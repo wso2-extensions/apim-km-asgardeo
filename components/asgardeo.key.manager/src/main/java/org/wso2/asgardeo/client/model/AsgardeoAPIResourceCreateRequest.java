@@ -6,9 +6,6 @@ public class AsgardeoAPIResourceCreateRequest {
     @SerializedName("name")
     private String name;
 
-    @SerializedName("displayName")
-    private String displayName;
-
     @SerializedName("identifier")
     private String identifier;
 
@@ -18,14 +15,6 @@ public class AsgardeoAPIResourceCreateRequest {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
     }
 
     public String getIdentifier() {

@@ -9,6 +9,6 @@ public interface AsgardeoAPIResourceClient {
     @Headers("Content-Type: application/json")
     AsgardeoAPIResourceResponse createAPIResource(AsgardeoAPIResourceCreateRequest body);
 
-    @RequestLine("GET /api-resources?limit={limit}&offset={offset}")
-    AsgardeoAPIResourceListResponse listAPIResources(@Param("limit") int limit, @Param("offset") int offset);
+    @RequestLine("GET /api-resources?limit={limit}&filter=name+eq+{name}")
+    AsgardeoAPIResourceListResponse listAPIResources(@Param("limit") int limit, @Param("name") String filterName);
 }

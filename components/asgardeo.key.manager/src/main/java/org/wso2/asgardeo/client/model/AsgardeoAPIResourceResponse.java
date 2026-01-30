@@ -6,8 +6,8 @@ public class AsgardeoAPIResourceResponse {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("displayName")
-    private String displayName;
+    @SerializedName("name")
+    private String name;
 
     @SerializedName("identifier")
     private String identifier;
@@ -20,12 +20,12 @@ public class AsgardeoAPIResourceResponse {
         this.id = id;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getName() {
+        return name;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getIdentifier() {

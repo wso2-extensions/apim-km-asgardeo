@@ -15,9 +15,6 @@ public class AsgardeoScopeCreateRequest {
     @SerializedName("description")
     private String description;
 
-    @SerializedName("bindings")
-    private List<String> bindings;
-
     public String getName() {
         return name;
     }
@@ -40,13 +37,5 @@ public class AsgardeoScopeCreateRequest {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public List<String> getBindings() {
-        return bindings;
-    }
-
-    public void setBindings(List<String> bindings) {
-        this.bindings = bindings;
     }
 }

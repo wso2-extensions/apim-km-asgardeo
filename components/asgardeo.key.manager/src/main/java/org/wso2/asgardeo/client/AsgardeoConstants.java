@@ -38,7 +38,8 @@ public class AsgardeoConstants {
     public static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
     public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view internal_dcr_update internal_dcr_delete " +
-            "internal_application_mgt_view internal_application_mgt_update";
+            "internal_application_mgt_view internal_application_mgt_update "+
+            "internal_api_resource_create internal_api_resource_view internal_api_resource_update internal_api_resource_delete";
     public static final String TOKEN_APPLICATION = "APPLICATION";
     public static final String TOKEN_STATE_INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
     public static final String TOKEN_STATE_ACTIVE = "ACTIVE";
@@ -46,7 +47,8 @@ public class AsgardeoConstants {
 
     public static final String GLOBAL_API_RESOURCE_NAME = "APIM_GLOBAL_SCOPES";
     public static final String GLOBAL_API_RESOURCE_DISPLAY_NAME = "APIM Global Scopes";
-    public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "apim-global-scopes";
+    public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "api.";
+    public static final String SCOPE_PREFIX = "apim_";
 
     AsgardeoConstants() {
     }

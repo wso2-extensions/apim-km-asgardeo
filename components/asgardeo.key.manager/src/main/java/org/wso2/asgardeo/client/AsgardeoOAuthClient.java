@@ -48,9 +48,15 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     private AsgardeoAppListClient appListClient;
     private AsgardeoOIDCInboundClient oidcInboundClient;
     private AsgardeoIntrospectionClient introspectionClient;
+    private AsgardeoAPIResourceClient apiResourceClient;
+    private AsgardeoAPIResourceScopesClient apiResourceScopesClient;
+
     private Map<String, String> appIdMap;
+    private final Map<String, String> scopeNameToIdMap = new ConcurrentHashMap<>();
+
 
     private String mgmtClientId, mgmtClientSecret; //client id and secret of app management api authorized
+    private String globalApiResourceId;
 
     private boolean issueJWTTokens;
 
@@ -94,7 +100,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         else
             introspectionEndpoint = baseURL + "/t/" + org + "/oauth2/introspect";
 
-        // for JWT conversion - Application management API endpoint
+        // for JWT conversion - Application management API endpoint and API  resource endpoint
         String applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1";
 
         tokenClient = feign.Feign.builder()
@@ -138,7 +144,23 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .requestInterceptor(interceptor)
                 .target(AsgardeoOIDCInboundClient.class, applicationsServerBase);
 
+        apiResourceClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new feign.gson.GsonEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .requestInterceptor(interceptor)
+                .target(AsgardeoAPIResourceClient.class, applicationsServerBase);
 
+        apiResourceScopesClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new feign.gson.GsonEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .requestInterceptor(interceptor)
+                .target(AsgardeoAPIResourceScopesClient.class, applicationsServerBase);
+
+        globalApiResourceId = doesAPIResourceExistAndGetId();
     }
 
     /**
@@ -596,19 +618,40 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     @Override
     public void registerScope(Scope scope) throws APIManagementException {
+        AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
+        req.setName(addScopePrefix(scope.getKey()));
+        req.setDisplayName(scope.getName());
+        req.setDescription(scope.getDescription());
 
+        AsgardeoScopeResponse created = apiResourceScopesClient.createScope(globalApiResourceId, Collections.singletonList(req));
+        if (created != null && created.getId() != null) {
+            scopeNameToIdMap.put(created.getName(), created.getId());
+        }
     }
 
     @Override
     public Scope getScopeByName(String name) throws APIManagementException {
 
-        return null;
+        return getAllScopes().get(name);
     }
 
     @Override
     public Map<String, Scope> getAllScopes() throws APIManagementException {
+        Map<String, Scope> map = new HashMap<>();
 
-        return null;
+        List<AsgardeoScopeResponse> scopes =  apiResourceScopesClient.listScopes(globalApiResourceId);
+
+        for (AsgardeoScopeResponse s : scopes) {
+            scopeNameToIdMap.put(removeScopePrefix(s.getName()), s.getId());
+
+            Scope scope = new Scope();
+            scope.setKey(removeScopePrefix(s.getName()));
+            scope.setName(s.getDisplayName());
+            scope.setDescription(s.getDescription());
+            map.put(scope.getKey(), scope);
+        }
+
+        return map;
     }
 
     @Override
@@ -620,7 +663,34 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public void updateResourceScopes(API api, Set<String> oldLocalScopeKeys, Set<Scope> newLocalScopes,
                                      Set<URITemplate> oldURITemplates, Set<URITemplate> newURITemplates)
             throws APIManagementException {
+        //delete old local scopes from Asgardeo (optional: only those prefixed as local)
+        for (String oldScope : oldLocalScopeKeys) {
+            deleteScope(addScopePrefix(oldScope));
+        }
 
+        //TODO get remaining scopes and add them to this too UGHHH
+
+        ArrayList<AsgardeoScopeCreateRequest> scopesToBeUpdated = new ArrayList<>(newLocalScopes.size());
+
+        //create or update new scopes
+        for (Scope scope : newLocalScopes) {
+            AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
+            req.setName(addScopePrefix(scope.getKey()));
+            req.setDisplayName(scope.getName());
+            req.setDescription(scope.getDescription());
+
+            scopesToBeUpdated.add(req);
+        }
+
+        apiResourceScopesClient.createScope(globalApiResourceId, scopesToBeUpdated);
+    }
+
+    private String addScopePrefix(String scope){
+        return AsgardeoConstants.SCOPE_PREFIX.concat(scope);
+    }
+
+    private String removeScopePrefix(String scope){
+        return scope.split(AsgardeoConstants.SCOPE_PREFIX)[1];
     }
 
     @Override
@@ -631,17 +701,33 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public void deleteScope(String scopeName) throws APIManagementException {
 
+        apiResourceScopesClient.deleteScope(globalApiResourceId, scopeName);
+        scopeNameToIdMap.remove(scopeName);
     }
 
     @Override
     public void updateScope(Scope scope) throws APIManagementException {
-
+//        String scopeId = scopeNameToIdMap.get(scope.getKey());
+//        if (scopeId == null) {
+//            // refresh cache
+//            getAllScopes();
+//            scopeId = scopeNameToIdMap.get(scope.getKey());
+//        }
+//        if (scopeId == null) {
+//            throw new APIManagementException("Scope not found in Asgardeo: " + scope.getKey());
+//        }
+//
+//        AsgardeoScopeUpdateRequest req = new AsgardeoScopeUpdateRequest();
+//        req.setDisplayName(scope.getName());
+//        req.setDescription(scope.getDescription());
+//
+//        apiResourceScopesClient.updateScope(globalApiResourceId, scopeId, req);
     }
 
     @Override
     public boolean isScopeExists(String scopeName) throws APIManagementException {
 
-        return false;
+        return getScopeByName(scopeName) != null;
     }
 
     @Override
@@ -666,5 +752,27 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         }
 
         return encodedCredentials;
+    }
+
+    private String doesAPIResourceExistAndGetId() throws APIManagementException{
+        int limit = 100;
+
+        AsgardeoAPIResourceListResponse page = apiResourceClient.listAPIResources(limit, AsgardeoConstants.GLOBAL_API_RESOURCE_NAME);
+        if(page.getApiResources() != null)
+            for(AsgardeoAPIResourceResponse r : page.getApiResources())
+                if(AsgardeoConstants.GLOBAL_API_RESOURCE_NAME.equals(r.getName()))
+                    return r.getId();
+
+        //if not found, create it
+        AsgardeoAPIResourceCreateRequest req = new AsgardeoAPIResourceCreateRequest();
+        req.setName(AsgardeoConstants.GLOBAL_API_RESOURCE_NAME);
+        req.setIdentifier(AsgardeoConstants.GLOBAL_API_RESOURCE_IDENTIFIER);
+
+        AsgardeoAPIResourceResponse created = apiResourceClient.createAPIResource(req);
+        if (created == null || created.getId() == null) {
+            throw new APIManagementException("Failed to create global API resource in Asgardeo.");
+        }
+
+        return created.getId();
     }
 }

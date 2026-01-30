@@ -17,9 +17,6 @@ public class AsgardeoScopeResponse {
     @SerializedName("description")
     private String description;
 
-    @SerializedName("bindings")
-    private List<String> bindings; //roles
-
     public String getId() {
         return id;
     }
@@ -50,13 +47,5 @@ public class AsgardeoScopeResponse {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public List<String> getBindings() {
-        return bindings;
-    }
-
-    public void setBindings(List<String> bindings) {
-        this.bindings = bindings;
     }
 }
