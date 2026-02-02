@@ -47,7 +47,7 @@ public class AsgardeoConstants {
 
     public static final String GLOBAL_API_RESOURCE_NAME = "APIM_GLOBAL_SCOPES";
     public static final String GLOBAL_API_RESOURCE_DISPLAY_NAME = "APIM Global Scopes";
-    public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "api.";
+    public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "/api/server/v1/scope-resource";
     public static final String SCOPE_PREFIX = "apim_";
 
     AsgardeoConstants() {

@@ -195,10 +195,22 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             if (issueJWTTokens)
                 tryChangeAccessTokenToJWT(created, oAuthAppRequest);
 
+            authorizeAPItoApp(created);
+
             return createOAuthApplicationInfo(created);
         } catch (KeyManagerClientException e) {
            handleException("Cannot create OAuth Application: "+clientName+ " for Application "+appName, e);
            return null;
+        }
+    }
+
+    private void authorizeAPItoApp(AsgardeoDCRClientInfo created) throws APIManagementException {
+        String appId = resolveAppIdByClientId(created.getClientId());
+
+        try {
+            apiResourceClient.authorizeAPItoApp(appId, new AsgardeoAPIAuthRequest(globalApiResourceId));
+        }catch (FeignException e){
+            handleException("Couldn't Authorize Resource API to OAuth Application with Application Id: "+appId, e);
         }
     }
 
