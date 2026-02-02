@@ -23,6 +23,9 @@ public class AsgardeoDCRClientInfo {
     @SerializedName("redirect_uris")
     private List<String> redirectUris;
 
+    @SerializedName("token_type_extension")
+    private String tokenTypeExtension; //set to "JWT" for JWT access token type
+
     public String getClientName() { return clientName; }
     public void setClientName(String clientName) { this.clientName = clientName; }
 
@@ -44,5 +47,9 @@ public class AsgardeoDCRClientInfo {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setTokenTypeAsJWT(){
+        tokenTypeExtension = "JWT";
     }
 }

@@ -46,7 +46,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     private AsgardeoTokenClient tokenClient;
     private AsgardeoDCRClient dcrClient;
     private AsgardeoAppListClient appListClient;
-    private AsgardeoOIDCInboundClient oidcInboundClient;
+   // private AsgardeoOIDCInboundClient oidcInboundClient;
     private AsgardeoIntrospectionClient introspectionClient;
     private AsgardeoAPIResourceClient apiResourceClient;
     private AsgardeoAPIResourceScopesClient apiResourceScopesClient;
@@ -136,13 +136,15 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .requestInterceptor(interceptor)
                 .target(AsgardeoAppListClient.class, applicationsServerBase);
 
-        oidcInboundClient = feign.Feign.builder()
-                .client(new feign.okhttp.OkHttpClient())
-                .encoder(new feign.gson.GsonEncoder())
-                .decoder(new feign.gson.GsonDecoder())
-                .logger(new feign.slf4j.Slf4jLogger())
-                .requestInterceptor(interceptor)
-                .target(AsgardeoOIDCInboundClient.class, applicationsServerBase);
+        // not needed as JWT token type can be set through a parameter in the DCR payload. but kept this in case we need
+        // to use this client in the future
+//        oidcInboundClient = feign.Feign.builder()
+//                .client(new feign.okhttp.OkHttpClient())
+//                .encoder(new feign.gson.GsonEncoder())
+//                .decoder(new feign.gson.GsonDecoder())
+//                .logger(new feign.slf4j.Slf4jLogger())
+//                .requestInterceptor(interceptor)
+//                .target(AsgardeoOIDCInboundClient.class, applicationsServerBase);
 
         apiResourceClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -175,10 +177,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         OAuthApplicationInfo in = oAuthAppRequest.getOAuthApplicationInfo();
 
         String appName = in.getClientName();
+        String appId = in.getApplicationUUID();
         String keyType = (String) in.getParameter(ApplicationConstants.APP_KEY_TYPE);
         String user = (String) in.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
 
-        String clientName = (user != null ? user : "apim") + "_" + appName + (keyType != null ? "_" + keyType : "");
+        String clientName = (user != null ? user : "apim") + "_" + appName + "_" + appId.substring(0, 4) +
+                "_"+ (keyType != null ? "_" + keyType : "");
 
         AsgardeoDCRClientInfo body =  new AsgardeoDCRClientInfo();
 
@@ -187,13 +191,15 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         List<String> grantTypes = getGrantTypesFromOAuthApp(in);
         body.setGrantTypes(grantTypes);
       //  log.info("APIM Callback uRL : "+in.getCallBackURL());
+        // TODO this is still hardcoded
         body.setRedirectUris(java.util.Collections.singletonList("https://localhost:9443"));
 
         try {
-            AsgardeoDCRClientInfo created = dcrClient.create(body);
 
             if (issueJWTTokens)
-                tryChangeAccessTokenToJWT(created, oAuthAppRequest);
+                body.setTokenTypeAsJWT();
+
+            AsgardeoDCRClientInfo created = dcrClient.create(body);
 
             authorizeAPItoApp(created);
 
@@ -214,24 +220,25 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         }
     }
 
-    private void tryChangeAccessTokenToJWT(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) throws APIManagementException {
-        try{
-            String appId = resolveAppIdByClientId(created.getClientId());
-
-            AsgardeoOIDCInboundRequest inboundRequest = buildInboundPayload(created, oAuthAppRequest);
-
-            try {
-                oidcInboundClient.updateOidcInbound(appId, inboundRequest);
-            }catch(feign.FeignException e){
-                log.warn("Failed to update OIDC config to JWT for client ID : "+created.getClientId()
-                + " (app ID : "+appId+"). Falling back to Opaque type. HTTP "+e.status() +" body=" +e.contentUTF8());
-            }
-
-            created.setId(appId);
-        }catch(APIManagementException e){
-            handleException("Could not change access token of service provider with ID : "+created.getClientId(), e);
-        }
-    }
+    // no longer required as DCR call can do this
+//    private void tryChangeAccessTokenToJWT(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) throws APIManagementException {
+//        try{
+//            String appId = resolveAppIdByClientId(created.getClientId());
+//
+//            AsgardeoOIDCInboundRequest inboundRequest = buildInboundPayload(created, oAuthAppRequest);
+//
+//            try {
+//                oidcInboundClient.updateOidcInbound(appId, inboundRequest);
+//            }catch(feign.FeignException e){
+//                log.warn("Failed to update OIDC config to JWT for client ID : "+created.getClientId()
+//                + " (app ID : "+appId+"). Falling back to Opaque type. HTTP "+e.status() +" body=" +e.contentUTF8());
+//            }
+//
+//            created.setId(appId);
+//        }catch(APIManagementException e){
+//            handleException("Could not change access token of service provider with ID : "+created.getClientId(), e);
+//        }
+//    }
 
     private AsgardeoOIDCInboundRequest buildInboundPayload(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) {
         AsgardeoOIDCInboundRequest toBeBuilt = new AsgardeoOIDCInboundRequest();
