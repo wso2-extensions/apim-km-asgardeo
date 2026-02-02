@@ -435,7 +435,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         AsgardeoAccessTokenResponse retrievedToken = tokenClient.getAccessToken(grantType, scope, basicCredentials);
 
         if(retrievedToken == null || retrievedToken.getAccessToken() == null || retrievedToken.getAccessToken().isEmpty())
-            throw new APIManagementException("Asgardeoeo token endpoint returned an empty token!");
+            throw new APIManagementException("Asgardeo token endpoint returned an empty token!");
 
         // mapping response to apim  model
         AccessTokenInfo response = new AccessTokenInfo();
@@ -631,7 +631,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public void registerScope(Scope scope) throws APIManagementException {
         AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
-        req.setName(addScopePrefix(scope.getKey()));
+        req.setName((scope.getKey()));
         req.setDisplayName(scope.getName());
         req.setDescription(scope.getDescription());
 
@@ -654,10 +654,10 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         List<AsgardeoScopeResponse> scopes =  apiResourceScopesClient.listScopes(globalApiResourceId);
 
         for (AsgardeoScopeResponse s : scopes) {
-            scopeNameToIdMap.put(removeScopePrefix(s.getName()), s.getId());
+            scopeNameToIdMap.put((s.getName()), s.getId());
 
             Scope scope = new Scope();
-            scope.setKey(removeScopePrefix(s.getName()));
+            scope.setKey((s.getName()));
             scope.setName(s.getDisplayName());
             scope.setDescription(s.getDescription());
             map.put(scope.getKey(), scope);
@@ -677,7 +677,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             throws APIManagementException {
         //delete old local scopes from Asgardeo (optional: only those prefixed as local)
         for (String oldScope : oldLocalScopeKeys) {
-            deleteScope(addScopePrefix(oldScope));
+            deleteScope((oldScope));
         }
 
         List<AsgardeoScopeResponse> fetchedScopes = apiResourceScopesClient.listScopes(globalApiResourceId);
@@ -687,7 +687,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         //create or update new scopes
         for (Scope scope : newLocalScopes) {
             AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
-            req.setName(addScopePrefix(scope.getKey()));
+            req.setName((scope.getKey()));
             req.setDisplayName(scope.getName());
             req.setDescription(scope.getDescription());
 
@@ -706,13 +706,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         apiResourceScopesClient.createScope(globalApiResourceId, scopesToBeUpdated);
     }
 
-    private String addScopePrefix(String scope){
-        return AsgardeoConstants.SCOPE_PREFIX.concat(scope);
-    }
-
-    private String removeScopePrefix(String scope){
-        return scope.split(AsgardeoConstants.SCOPE_PREFIX)[1];
-    }
+//    private String addScopePrefix(String scope){
+//        return AsgardeoConstants.SCOPE_PREFIX.concat(scope);
+//    }
+//
+//    private String removeScopePrefix(String scope){
+//        return scope.split(AsgardeoConstants.SCOPE_PREFIX)[1];
+//    }
 
     @Override
     public void detachResourceScopes(API api, Set<URITemplate> uriTemplates) throws APIManagementException {
