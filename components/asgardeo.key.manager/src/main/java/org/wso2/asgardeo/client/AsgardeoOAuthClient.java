@@ -181,8 +181,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         String keyType = (String) in.getParameter(ApplicationConstants.APP_KEY_TYPE);
         String user = (String) in.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
 
-        String clientName = (user != null ? user : "apim") + "_" + appName + "_" + appId.substring(0, 4) +
-                "_"+ (keyType != null ? "_" + keyType : "");
+        String clientName = (user != null ? user : "apim") + "_" + appName + "_" + appId.substring(0, 7)+ (keyType != null ? "_" + keyType : "");
 
         AsgardeoDCRClientInfo body =  new AsgardeoDCRClientInfo();
 
@@ -240,18 +239,18 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 //        }
 //    }
 
-    private AsgardeoOIDCInboundRequest buildInboundPayload(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) {
-        AsgardeoOIDCInboundRequest toBeBuilt = new AsgardeoOIDCInboundRequest();
-
-        toBeBuilt.setClientId(created.getClientId());
-        toBeBuilt.setGrantTypes(created.getGrantTypes());
-        toBeBuilt.setAllowedOrigins(Collections.emptyList());
-
-        AsgardeoOIDCInboundRequest.AccessToken accessToken = new AsgardeoOIDCInboundRequest.AccessToken("JWT", 3600, 3600);
-
-        toBeBuilt.setAccessToken(accessToken);
-        return toBeBuilt;
-    }
+//    private AsgardeoOIDCInboundRequest buildInboundPayload(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) {
+//        AsgardeoOIDCInboundRequest toBeBuilt = new AsgardeoOIDCInboundRequest();
+//
+//        toBeBuilt.setClientId(created.getClientId());
+//        toBeBuilt.setGrantTypes(created.getGrantTypes());
+//        toBeBuilt.setAllowedOrigins(Collections.emptyList());
+//
+//        AsgardeoOIDCInboundRequest.AccessToken accessToken = new AsgardeoOIDCInboundRequest.AccessToken("JWT", 3600, 3600);
+//
+//        toBeBuilt.setAccessToken(accessToken);
+//        return toBeBuilt;
+//    }
 
     // this method also provides fast lookup if the app id exists
     private String resolveAppIdByClientId(String clientId) throws APIManagementException{
