@@ -668,15 +668,24 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             deleteScope(addScopePrefix(oldScope));
         }
 
-        //TODO get remaining scopes and add them to this too UGHHH
+        List<AsgardeoScopeResponse> fetchedScopes = apiResourceScopesClient.listScopes(globalApiResourceId);
 
-        ArrayList<AsgardeoScopeCreateRequest> scopesToBeUpdated = new ArrayList<>(newLocalScopes.size());
+        ArrayList<AsgardeoScopeCreateRequest> scopesToBeUpdated = new ArrayList<>(newLocalScopes.size() + fetchedScopes.size());
 
         //create or update new scopes
         for (Scope scope : newLocalScopes) {
             AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
             req.setName(addScopePrefix(scope.getKey()));
             req.setDisplayName(scope.getName());
+            req.setDescription(scope.getDescription());
+
+            scopesToBeUpdated.add(req);
+        }
+
+        for(AsgardeoScopeResponse scope : fetchedScopes) {
+            AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
+            req.setName(scope.getName());
+            req.setDisplayName(scope.getDisplayName());
             req.setDescription(scope.getDescription());
 
             scopesToBeUpdated.add(req);
