@@ -24,7 +24,21 @@ public class AsgardeoDCRClientInfo {
     private List<String> redirectUris;
 
     @SerializedName("token_type_extension")
-    private String tokenTypeExtension; //set to "JWT" for JWT access token type
+    private String tokenTypeExtension;
+
+    @SerializedName("ext_application_token_lifetime")
+    private Long applicationTokenLifetime;
+
+    @SerializedName("ext_user_token_lifetime")
+    private Long userTokenLifetime;
+
+    @SerializedName("ext_refresh_token_lifetime")
+    private long refreshTokenLifetime;
+
+    @SerializedName("ext_id_token_lifetime")
+    private long idTokenLifetime;
+
+    //set to "JWT" for JWT access token type
 
     public String getClientName() { return clientName; }
     public void setClientName(String clientName) { this.clientName = clientName; }
@@ -51,5 +65,37 @@ public class AsgardeoDCRClientInfo {
 
     public void setTokenTypeAsJWT(){
         tokenTypeExtension = "JWT";
+    }
+
+    public Long getApplicationTokenLifetime() {
+        return applicationTokenLifetime;
+    }
+
+    public void setApplicationTokenLifetime(Long applicationTokenLifetime) {
+        this.applicationTokenLifetime = applicationTokenLifetime;
+    }
+
+    public Long getUserTokenLifetime() {
+        return userTokenLifetime;
+    }
+
+    public void setUserTokenLifetime(Long userTokenLifetime) {
+        this.userTokenLifetime = userTokenLifetime;
+    }
+
+    public long getRefreshTokenLifetime() {
+        return refreshTokenLifetime;
+    }
+
+    public void setRefreshTokenLifetime(long refreshTokenLifetime) {
+        this.refreshTokenLifetime = refreshTokenLifetime;
+    }
+
+    public long getIdTokenLifetime() {
+        return idTokenLifetime;
+    }
+
+    public void setIdTokenLifetime(long idTokenLifetime) {
+        this.idTokenLifetime = idTokenLifetime;
     }
 }

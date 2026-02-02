@@ -50,6 +50,11 @@ public class AsgardeoConstants {
     public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "/api/server/v1/scope-resource";
     public static final String SCOPE_PREFIX = "apim_";
 
+    public static final String APPLICATION_TOKEN_LIFETIME = "ext_application_token_lifetime";
+    public static final String USER_TOKEN_LIFETIME = "ext_user_token_lifetime";
+    public static final String REFRESH_TOKEN_LIFETIME = "ext_refresh_token_lifetime";
+    public static final String ID_TOKEN_LIFETIME = "ext_id_token_lifetime";
+
     AsgardeoConstants() {
     }
 }

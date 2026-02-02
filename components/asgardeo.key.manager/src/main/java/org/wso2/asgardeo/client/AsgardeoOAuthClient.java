@@ -17,6 +17,7 @@
  */
 package org.wso2.asgardeo.client;
 
+import com.google.gson.Gson;
 import feign.FeignException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -24,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
 import org.wso2.asgardeo.client.model.*;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.ExceptionCodes;
 import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
@@ -314,10 +316,28 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             out.setCallBackURL(String.join(",", dcrClient.getRedirectUris()));
         }
 
-        //put app id in OAuthApplicationInfo if needed later
-        if(dcrClient.getId() != null)
-            out.addParameter(APIConstants.JSON_ADDITIONAL_PROPERTIES, new HashMap<>().put("asgardeoAppId", dcrClient.getId()));
+        Map<String, Object> additionalProperties = getAdditionalPropertiesFromClient(dcrClient);
+
+        out.addParameter(APIConstants.JSON_ADDITIONAL_PROPERTIES, additionalProperties);
+
         return out;
+    }
+
+    @NotNull
+    private static Map<String, Object> getAdditionalPropertiesFromClient(AsgardeoDCRClientInfo dcrClient) {
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put(AsgardeoConstants.APPLICATION_TOKEN_LIFETIME,
+                dcrClient.getApplicationTokenLifetime());
+        additionalProperties.put(AsgardeoConstants.USER_TOKEN_LIFETIME,
+                dcrClient.getUserTokenLifetime());
+        additionalProperties.put(AsgardeoConstants.REFRESH_TOKEN_LIFETIME,
+                dcrClient.getRefreshTokenLifetime());
+        additionalProperties.put(AsgardeoConstants.ID_TOKEN_LIFETIME, dcrClient.getIdTokenLifetime());
+
+        //put app id in if needed later
+        if(dcrClient.getId() != null)
+            additionalProperties.put("asgardeoAppId", dcrClient.getId());
+        return additionalProperties;
     }
 
     /**
@@ -341,6 +361,15 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             body.setRedirectUris(Arrays.asList(in.getCallBackURL().split(",")));
         }
 
+        Object parameter = in.getParameter(APIConstants.JSON_ADDITIONAL_PROPERTIES);
+
+        Map<String, Object> additionalProperties = new HashMap<>();
+
+        if (parameter instanceof String) {
+            additionalProperties = new Gson().fromJson((String) parameter, Map.class);
+            setAdditionalPropertiesToClient(additionalProperties, in, body);
+        }
+
         try {
             AsgardeoDCRClientInfo updated = dcrClient.update(in.getClientId(), body);
 
@@ -357,6 +386,84 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             return null;
         }
 
+    }
+
+    private static void setAdditionalPropertiesToClient(Map<String, Object> additionalProperties, OAuthApplicationInfo in, AsgardeoDCRClientInfo body) throws APIManagementException {
+        if (additionalProperties.containsKey(AsgardeoConstants.APPLICATION_TOKEN_LIFETIME)) {
+            Object expiryTimeObject =
+                    additionalProperties.get(AsgardeoConstants.APPLICATION_TOKEN_LIFETIME);
+            if (expiryTimeObject instanceof String) {
+                if (!APIConstants.KeyManager.NOT_APPLICABLE_VALUE.equals(expiryTimeObject)) {
+                    try {
+                        long expiry = Long.parseLong((String) expiryTimeObject);
+                        if (expiry < 0) {
+                            throw new APIManagementException("Invalid application token lifetime given for "
+                                    + in.getClientName(), ExceptionCodes.INVALID_APPLICATION_PROPERTIES);
+                        }
+                        body.setApplicationTokenLifetime(expiry);
+                    } catch (NumberFormatException e) {
+                        // No need to throw as its due to not a number sent.
+                    }
+                }
+            }
+        }
+
+        if (additionalProperties.containsKey(AsgardeoConstants.USER_TOKEN_LIFETIME)) {
+            Object expiryTimeObject =
+                    additionalProperties.get(AsgardeoConstants.USER_TOKEN_LIFETIME);
+            if (expiryTimeObject instanceof String) {
+                if (!APIConstants.KeyManager.NOT_APPLICABLE_VALUE.equals(expiryTimeObject)) {
+                    try {
+                        long expiry = Long.parseLong((String) expiryTimeObject);
+                        if (expiry < 0) {
+                            throw new APIManagementException("Invalid application token lifetime given for "
+                                    + in.getClientName(), ExceptionCodes.INVALID_APPLICATION_PROPERTIES);
+                        }
+                        body.setUserTokenLifetime(expiry);
+                    } catch (NumberFormatException e) {
+                        // No need to throw as its due to not a number sent.
+                    }
+                }
+            }
+        }
+
+        if (additionalProperties.containsKey(AsgardeoConstants.REFRESH_TOKEN_LIFETIME)) {
+            Object expiryTimeObject =
+                    additionalProperties.get(AsgardeoConstants.REFRESH_TOKEN_LIFETIME);
+            if (expiryTimeObject instanceof String) {
+                if (!APIConstants.KeyManager.NOT_APPLICABLE_VALUE.equals(expiryTimeObject)) {
+                    try {
+                        long expiry = Long.parseLong((String) expiryTimeObject);
+                        if (expiry < 0) {
+                            throw new APIManagementException("Invalid application token lifetime given for "
+                                    + in.getClientName(), ExceptionCodes.INVALID_APPLICATION_PROPERTIES);
+                        }
+                        body.setRefreshTokenLifetime(expiry);
+                    } catch (NumberFormatException e) {
+                        // No need to throw as its due to not a number sent.
+                    }
+                }
+            }
+        }
+
+        if (additionalProperties.containsKey(AsgardeoConstants.ID_TOKEN_LIFETIME)) {
+            Object expiryTimeObject =
+                    additionalProperties.get(AsgardeoConstants.ID_TOKEN_LIFETIME);
+            if (expiryTimeObject instanceof String) {
+                if (!APIConstants.KeyManager.NOT_APPLICABLE_VALUE.equals(expiryTimeObject)) {
+                    try {
+                        long expiry = Long.parseLong((String) expiryTimeObject);
+                        if (expiry < 0) {
+                            throw new APIManagementException("Invalid application token lifetime given for "
+                                    + in.getClientName(), ExceptionCodes.INVALID_APPLICATION_PROPERTIES);
+                        }
+                        body.setIdTokenLifetime(expiry);
+                    } catch (NumberFormatException e) {
+                        // No need to throw as its due to not a number sent.
+                    }
+                }
+            }
+        }
     }
 
     @Override

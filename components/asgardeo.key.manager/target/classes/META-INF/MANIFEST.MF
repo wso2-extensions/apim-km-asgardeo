@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1770023431747
+Bnd-LastModified: 1770027857697
 Build-Jdk: 11.0.29
 Built-By: shakthi
 Bundle-Description: WSO2 is an open source application development softw
@@ -18,18 +18,18 @@ Export-Package: org.wso2.asgardeo.client;version="1.0.0.SNAPSHOT";uses:=
  "org.wso2.carbon.apimgt.api,org.wso2.carbon.apimgt.api.model,org.wso2.c
  arbon.apimgt.impl",org.wso2.asgardeo.client.model;version="1.0.0.SNAPSH
  OT";uses:="feign,org.wso2.carbon.apimgt.impl.kmclient"
-Import-Package: com.google.gson.annotations;version="[2.1,3)",org.wso2.c
- arbon.apimgt.api;version="[9.0.0,10.0.0)",org.wso2.carbon.apimgt.api.mo
- del;version="[9.0.0,10.0.0)",org.wso2.carbon.apimgt.impl;version="[9.0.
- 0,10.0.0)",org.wso2.carbon.apimgt.impl.kmclient;version="[9.0.0,10.0.0)
- ",feign;resolution:=optional;version="[13.2,14)",feign.codec;resolution
- :=optional;version="[13.2,14)",feign.gson;resolution:=optional;version=
- "[13.2,14)",feign.okhttp;resolution:=optional;version="[13.2,14)",feign
- .slf4j;resolution:=optional;version="[13.2,14)",org.apache.commons.lang
- ;resolution:=optional;version="[2.6,3)",org.apache.commons.logging;reso
- lution:=optional;version="[1.2,2)",org.wso2.asgardeo.client;resolution:
- =optional;version="[1.0,2)",org.wso2.asgardeo.client.model;resolution:=
- optional;version="[1.0,2)"
+Import-Package: com.google.gson;version="[2.1,3)",com.google.gson.annota
+ tions;version="[2.1,3)",org.wso2.carbon.apimgt.api;version="[9.0.0,10.0
+ .0)",org.wso2.carbon.apimgt.api.model;version="[9.0.0,10.0.0)",org.wso2
+ .carbon.apimgt.impl;version="[9.0.0,10.0.0)",org.wso2.carbon.apimgt.imp
+ l.kmclient;version="[9.0.0,10.0.0)",feign;resolution:=optional;version=
+ "[13.2,14)",feign.codec;resolution:=optional;version="[13.2,14)",feign.
+ gson;resolution:=optional;version="[13.2,14)",feign.okhttp;resolution:=
+ optional;version="[13.2,14)",feign.slf4j;resolution:=optional;version="
+ [13.2,14)",org.apache.commons.lang;resolution:=optional;version="[2.6,3
+ )",org.apache.commons.logging;resolution:=optional;version="[1.2,2)",or
+ g.wso2.asgardeo.client;resolution:=optional;version="[1.0,2)",org.wso2.
+ asgardeo.client.model;resolution:=optional;version="[1.0,2)"
 Provide-Capability: osgi.service;objectClass:List<String>="org.wso2.carb
  on.apimgt.api.model.KeyManagerConnectorConfiguration"
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"

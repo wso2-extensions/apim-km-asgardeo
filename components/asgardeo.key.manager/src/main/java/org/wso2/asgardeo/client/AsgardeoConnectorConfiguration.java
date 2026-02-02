@@ -21,6 +21,7 @@ package org.wso2.asgardeo.client;
 import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,11 +85,30 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
     @Override
     public List<ConfigurationDto> getApplicationConfigurations() {
 
-        List<ConfigurationDto> configurationDtoList = new ArrayList<ConfigurationDto>();
+        List<ConfigurationDto> applicationConfigurationsList = new ArrayList();
+        applicationConfigurationsList
+                .add(new ConfigurationDto(AsgardeoConstants.APPLICATION_TOKEN_LIFETIME,
+                        "Lifetime of the Application Token ", "input", "Type Lifetime of the Application Token " +
+                        "in seconds ", APIConstants.KeyManager.NOT_APPLICABLE_VALUE, false, false,
+                        Collections.EMPTY_LIST, false));
+        applicationConfigurationsList
+                .add(new ConfigurationDto(AsgardeoConstants.USER_TOKEN_LIFETIME,
+                        "Lifetime of the User Token ", "input", "Type Lifetime of the User Token " +
+                        "in seconds ", APIConstants.KeyManager.NOT_APPLICABLE_VALUE, false, false,
+                        Collections.EMPTY_LIST, false));
+        applicationConfigurationsList
+                .add(new ConfigurationDto(AsgardeoConstants.REFRESH_TOKEN_LIFETIME,
+                        "Lifetime of the Refresh Token ", "input", "Type Lifetime of the Refresh Token " +
+                        "in seconds ", APIConstants.KeyManager.NOT_APPLICABLE_VALUE, false, false,
+                        Collections.EMPTY_LIST, false));
+        applicationConfigurationsList
+                .add(new ConfigurationDto(AsgardeoConstants.ID_TOKEN_LIFETIME,
+                        "Lifetime of the ID Token", "input", "Type Lifetime of the ID Token " +
+                        "in seconds ", APIConstants.KeyManager.NOT_APPLICABLE_VALUE, false, false,
+                        Collections.EMPTY_LIST, false));
 
-       // todo add application configuration parameters that need create an OAuth application in the OAuth Server
 
-        return configurationDtoList;
+        return applicationConfigurationsList;
     }
 
     @Override
