@@ -114,7 +114,7 @@ The scopes required in the API must be mirrored in Asgardeo. The following steps
 
 2. Open the API that requires scope-based access control.
 
-3. Create a new **Scope** (or select an existing one)
+3. Create a new **Scope** (or skip this step and select an existing one)
 
 4. Assign the scope to the required API resource:
 - Navigate to the **Resources** section of the API
@@ -123,7 +123,7 @@ The scopes required in the API must be mirrored in Asgardeo. The following steps
 
 > Saving the API triggers APIM to propagate the scope to Asgardeo.  
 
-> The **Resources** of an **API** is equivalent to the **Tools** of an **MCP Server**
+> The **Resources** section of an **API** is equivalent to the **Tools** section of an **MCP Server**. The steps to create and assign scopes to a tool of an MCP Server are similar to the steps mentioned above.
 
 > ⚠ Saving may take a few moments. This is expected behavior due to the latency of scope management operations in Asgardeo.
 
