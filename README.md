@@ -40,14 +40,18 @@ ___
 
 4. Navigate to the **API Authorization** tab in the created application.
 5. Click **`+ Authorize API resource`** 
-6. In the popped up window, select `OAuth DCR API` as the **API Resource**, `Select All` for **Authorized Scopes**, and click on **Finish**.
-    > ⚠ If you don't see the required API Resource, wait a minute or two for the API Resources list to finish loading. Reload the page if the issue doesn't resolve.
-7. Repeat steps 5 and 6 for `Application Management API` and `API Resource Management API`. 
-8. Note the **Organization Name**, and **`Client ID`** **`Client Secret`** pair (found in the **Protocol** tab).
+6. In the popped up window, select the Management API `OAuth DCR API` as the **API Resource**, `Select All` for **Authorized Scopes**, and click on **Finish**.
+    > ⚠ If you don't see the required API Resource, wait a minute or two for the API Resources list to finish loading. Reload the page if the issue doesn't resolve.  
+
+    > ⚠ Ensure you have authorized the **Management API** version of the API Resource. It is a common mistake to authorize the **Organization API** version instead. 
+7. Repeat steps 5 and 6 for Management APIs `Application Management API` and `API Resource Management API`. 
+8. Note the 
+   - **Organization Name**
+   - **`Client ID`** and **`Client Secret`**  (found in the **Protocol** tab).
 
 ### C. Configuring the Asgardeo Key Manager in WSO2 APIM
 
-1. Log in to the **WSO2 API Manager Admin Portal**: `https://<APIM_HOME>/admin`
+1. Log in to the **WSO2 API Manager Admin Portal**: `https://<APIM_HOST>/admin`
 
 2. Navigate to **Key Managers** and click **Add Key Manager**.
 
@@ -103,7 +107,7 @@ The process involves **three roles**:
 ### Step 1: Create and Assign Scopes in the Publisher Portal
 The scopes required in the API must be mirrored in Asgardeo. The following steps must be completed by the **API Publisher**.
 
-1. Log in to the **Publisher Portal**: `https://<APIM_HOME>/publisher`
+1. Log in to the **Publisher Portal**: `https://<APIM_HOST>/publisher`
 
 2. Open the API that requires scope-based access control.
 
