@@ -123,7 +123,11 @@ The scopes required in the API must be mirrored in Asgardeo. The following steps
 
 > Saving the API triggers APIM to propagate the scope to Asgardeo.  
 
+> The **Resources** of an **API** is equivalent to the **Tools** of an **MCP Server**
+
 > ⚠ Saving may take a few moments. This is expected behavior due to the latency of scope management operations in Asgardeo.
+
+> ⚠ Ensure you give the scope a unique name. Asgardeo APIs have their own set of scopes and similar names will cause errors. 
 
 #### What Happens Internally
 
