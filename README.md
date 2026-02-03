@@ -62,18 +62,17 @@ https://api.asgardeo.io/t/<YOUR_ORGANIZATION>/oauth2/token/.well-known/openid-co
 6. Click **Import**.
 - All endpoint fields will be populated automatically **except** the Scope Management Endpoint.
 
-7. Manually set:
-- **Scope Management Endpoint**: `none`
+7. Manually set **Scope Management Endpoint**: `none`
 
 8. Under **Grant Types**, review the auto-populated list and remove any grant types you do not wish to support.
 
 9. Under **Connector Configurations**, enter the following values noted in section **B**:
-- **Organization Name**
-- **Client ID**
-- **Client Secret**
+   - **Organization Name**
+   - **Client ID**
+   - **Client Secret**
 
-    > ⚠ If you want **Asgardeo to issue JWT access tokens** instead of the default Opaque tokens:
-    > - Enable **Prefer JWT Access Tokens**
+    >    ⚠ If you want **Asgardeo to issue JWT access tokens** instead of the default Opaque tokens:
+    >    - Enable **Prefer JWT Access Tokens**
 10. Under **Advanced Configurations**:
 - If **Prefer JWT Access Tokens** is **not enabled**, set:
     - **Token Validation Method**: `Use introspect`
