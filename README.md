@@ -1,7 +1,10 @@
 # Asgardeo Key Manager for WSO2 APIM 4.6
 A Key Manager Implementation to Integrate **Asgardeo** with **WSO2 API Manager 4.6**  
   
-> <span style="color:#ee3333">⚠ Under active development ⚠</span>
+> <span style="color:#ee3333">⚠ Under active development ⚠</span>  
+
+> <span style="color:#ee3333">⚠ Redirect URLs are hardcoded for now when Generating Keys. Do set them up manually on Asgardeo if you intend to use them with Authorization Code ⚠</span>
+
 
 [//]: # (___)
 
