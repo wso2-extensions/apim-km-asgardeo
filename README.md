@@ -69,7 +69,7 @@ https://api.asgardeo.io/t/<YOUR_ORGANIZATION>/oauth2/token/.well-known/openid-co
 6. Click **Import**.
 - All endpoint fields will be populated automatically **except** the Scope Management Endpoint.
 
-7. Manually set **Scope Management Endpoint**: `none`
+7. Manually set **Scope Management Endpoint**: `none` (it isn't required to be explicitly set right now)
 
 8. Under **Grant Types**, review the auto-populated list and remove any grant types you do not wish to support.
 
