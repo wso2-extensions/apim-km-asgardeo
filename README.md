@@ -114,9 +114,7 @@ The scopes required in the API must be mirrored in Asgardeo. The following steps
 
 2. Open the API that requires scope-based access control.
 
-3. Create a new **Scope** (or select an existing one):
-- Provide a scope name (e.g., `order_read`)
-- Add a description if required
+3. Create a new **Scope** (or select an existing one)
 
 4. Assign the scope to the required API resource:
 - Navigate to the **Resources** section of the API
