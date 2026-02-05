@@ -55,6 +55,9 @@ public class AsgardeoConstants {
     public static final String REFRESH_TOKEN_LIFETIME = "ext_refresh_token_lifetime";
     public static final String ID_TOKEN_LIFETIME = "ext_id_token_lifetime";
 
+    public static final String RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
+    public static final String ROLES_MANAGEMENT_ENDPOINT = "asgardeo_roles_endpoint";
+
     AsgardeoConstants() {
     }
 }
