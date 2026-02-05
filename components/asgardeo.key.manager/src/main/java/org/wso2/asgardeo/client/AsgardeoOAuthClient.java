@@ -307,6 +307,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         out.setClientSecret(dcrClient.getClientSecret());
         out.addParameter(ApplicationConstants.OAUTH_CLIENT_ID, dcrClient.getClientId());
         out.addParameter(ApplicationConstants.OAUTH_CLIENT_SECRET, dcrClient.getClientSecret());
+        out.addParameter(ApplicationConstants.OAUTH_CLIENT_NAME, dcrClient.getClientName());
 
         if (dcrClient.getGrantTypes() != null && dcrClient.getGrantTypes().size() > 0) {
             out.addParameter(APIConstants.JSON_GRANT_TYPES, String.join(" ", dcrClient.getGrantTypes()));
@@ -788,11 +789,26 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public void updateResourceScopes(API api, Set<String> oldLocalScopeKeys, Set<Scope> newLocalScopes,
                                      Set<URITemplate> oldURITemplates, Set<URITemplate> newURITemplates)
             throws APIManagementException {
-        //delete old local scopes from Asgardeo (optional: only those prefixed as local)
-        for (String oldScope : oldLocalScopeKeys) {
-            deleteScope((oldScope));
+
+
+        if (globalApiResourceId != null) {
+            for (String oldScope : oldLocalScopeKeys) {
+                deleteScope(oldScope);
+            }
         }
 
+        createScopesInAsgardeoResource(newLocalScopes);
+    }
+
+    private void createScopesInAsgardeoResource(Set<Scope> newLocalScopes) {
+        if (globalApiResourceId == null){
+            try {
+                globalApiResourceId = doesAPIResourceExistAndGetId();
+            } catch (APIManagementException e) {
+                log.error("Couldn't find global resource", e);
+                return;
+            }
+        }
         List<AsgardeoScopeResponse> fetchedScopes = apiResourceScopesClient.listScopes(globalApiResourceId);
 
         ArrayList<AsgardeoScopeCreateRequest> scopesToBeUpdated = new ArrayList<>(newLocalScopes.size() + fetchedScopes.size());
@@ -834,9 +850,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     @Override
     public void deleteScope(String scopeName) throws APIManagementException {
-
-        apiResourceScopesClient.deleteScope(globalApiResourceId, scopeName);
-        scopeNameToIdMap.remove(scopeName);
+        try {
+            apiResourceScopesClient.deleteScope(globalApiResourceId, scopeName);
+            scopeNameToIdMap.remove(scopeName);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to delete scope: " + scopeName + " from WSO2 IS7 API Resource: " +
+                    AsgardeoConstants.GLOBAL_API_RESOURCE_NAME, e);
+        }
     }
 
     @Override
@@ -908,5 +928,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         }
 
         return created.getId();
+    }
+
+    private List<String> getRoles(Scope scope) {
+
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(scope.getRoles()) && scope.getRoles().trim().split(",").length > 0) {
+            return Arrays.asList(scope.getRoles().trim().split(","));
+        }
+        return Collections.emptyList();
     }
 }
