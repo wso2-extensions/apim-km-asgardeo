@@ -7,14 +7,11 @@ import feign.RequestLine;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 
 public interface AsgardeoAPIResourceClient {
-    @RequestLine("POST /api-resources")
+    @RequestLine("POST")
     @Headers("Content-Type: application/json")
     AsgardeoAPIResourceResponse createAPIResource(AsgardeoAPIResourceCreateRequest body);
 
-    @RequestLine("GET /api-resources?limit={limit}&filter=name+eq+{name}")
+    @RequestLine("GET ?limit={limit}&filter=name+eq+{name}")
     AsgardeoAPIResourceListResponse listAPIResources(@Param("limit") int limit, @Param("name") String filterName);
 
-    @RequestLine("POST /applications/{applicationId}/authorized-apis")
-    @Headers("Content-Type: application/json")
-    void authorizeAPItoApp(@Param("applicationId") String applicationId, AsgardeoAPIAuthRequest body) throws FeignException;
 }

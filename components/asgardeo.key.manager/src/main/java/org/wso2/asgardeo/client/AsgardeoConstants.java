@@ -39,24 +39,28 @@ public class AsgardeoConstants {
 
     public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view internal_dcr_update internal_dcr_delete " +
             "internal_application_mgt_view internal_application_mgt_update "+
-            "internal_api_resource_create internal_api_resource_view internal_api_resource_update internal_api_resource_delete";
+            "internal_api_resource_create internal_api_resource_view internal_api_resource_update internal_api_resource_delete "+
+            "internal_role_mgt_view internal_role_mgt_create internal_role_mgt_update internal_role_mgt_delete";
     public static final String TOKEN_APPLICATION = "APPLICATION";
     public static final String TOKEN_STATE_INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
     public static final String TOKEN_STATE_ACTIVE = "ACTIVE";
     public static final String TOKEN_STATE_INACTIVE = "INACTIVE";
 
     public static final String GLOBAL_API_RESOURCE_NAME = "APIM_GLOBAL_SCOPES";
-    public static final String GLOBAL_API_RESOURCE_DISPLAY_NAME = "APIM Global Scopes";
     public static final String GLOBAL_API_RESOURCE_IDENTIFIER = "/api/server/v1/scope-resource";
-    public static final String SCOPE_PREFIX = "apim_";
 
     public static final String APPLICATION_TOKEN_LIFETIME = "ext_application_token_lifetime";
     public static final String USER_TOKEN_LIFETIME = "ext_user_token_lifetime";
     public static final String REFRESH_TOKEN_LIFETIME = "ext_refresh_token_lifetime";
     public static final String ID_TOKEN_LIFETIME = "ext_id_token_lifetime";
 
-    public static final String RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
+    public static final String RESOURCE_MANAGEMENT_ENDPOINT = "asgardeo_api_resource_management_endpoint";
     public static final String ROLES_MANAGEMENT_ENDPOINT = "asgardeo_roles_endpoint";
+    public static final String APPLICATION_MANAGEMENT_ENDPOINT = "asgardeo_application_management_endpoint";
+
+    public static final String SEARCH_REQUEST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:SearchRequest";
+
+    public static final String BASE_URL_FORMAT = "https://api.asgardeo.io/t/{organization-name}";
 
     AsgardeoConstants() {
     }

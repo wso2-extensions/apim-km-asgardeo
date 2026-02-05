@@ -18,6 +18,9 @@
 package org.wso2.asgardeo.client;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import feign.FeignException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -36,6 +39,7 @@ import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * This class provides the implementation to use "Custom" Authorization Server for managing
@@ -47,11 +51,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     private AsgardeoTokenClient tokenClient;
     private AsgardeoDCRClient dcrClient;
-    private AsgardeoAppListClient appListClient;
+    private AsgardeoAppClient appClient;
    // private AsgardeoOIDCInboundClient oidcInboundClient;
     private AsgardeoIntrospectionClient introspectionClient;
     private AsgardeoAPIResourceClient apiResourceClient;
     private AsgardeoAPIResourceScopesClient apiResourceScopesClient;
+    private AsgardeoSCIMRolesClient asgardeoSCIMRolesClient;
 
     private Map<String, String> appIdMap;
     private final Map<String, String> scopeNameToIdMap = new ConcurrentHashMap<>();
@@ -61,6 +66,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     private String globalApiResourceId;
 
     private boolean issueJWTTokens;
+    private boolean enableRoleCreation;
 
     /**
      * {@code APIManagerComponent} calls this method, passing KeyManagerConfiguration as a {@code String}.
@@ -84,6 +90,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         if(configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE) != null)
             issueJWTTokens = (boolean) configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE);
         else issueJWTTokens = false; //default to opaque
+
+        enableRoleCreation = true;
+
         String dcrEndpoint;
         if(configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null)
             dcrEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT);
@@ -102,8 +111,17 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         else
             introspectionEndpoint = baseURL + "/t/" + org + "/oauth2/introspect";
 
+        String rolesEndpoint;
+//        if (configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT) != null) {
+//            rolesEndpoint = (String) configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT);
+//        } else {
+            rolesEndpoint = baseURL + "/t/" + org + "/scim2/v2/Roles";
+//        }
+
         // for JWT conversion - Application management API endpoint and API  resource endpoint
-        String applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1";
+        String applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1/application";
+
+        String apiResourceServerBase =   baseURL + "/t/" + org + "/api/server/v1/api-resources";
 
         tokenClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -130,13 +148,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .requestInterceptor(interceptor)
                 .target(AsgardeoDCRClient.class, dcrEndpoint);
 
-        appListClient = feign.Feign.builder()
+        appClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
                 .encoder(new feign.gson.GsonEncoder())
                 .decoder(new feign.gson.GsonDecoder())
                 .logger(new feign.slf4j.Slf4jLogger())
                 .requestInterceptor(interceptor)
-                .target(AsgardeoAppListClient.class, applicationsServerBase);
+                .target(AsgardeoAppClient.class, applicationsServerBase);
 
         // not needed as JWT token type can be set through a parameter in the DCR payload. but kept this in case we need
         // to use this client in the future
@@ -154,7 +172,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .decoder(new feign.gson.GsonDecoder())
                 .logger(new feign.slf4j.Slf4jLogger())
                 .requestInterceptor(interceptor)
-                .target(AsgardeoAPIResourceClient.class, applicationsServerBase);
+                .target(AsgardeoAPIResourceClient.class, apiResourceServerBase);
 
         apiResourceScopesClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -162,7 +180,15 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .decoder(new feign.gson.GsonDecoder())
                 .logger(new feign.slf4j.Slf4jLogger())
                 .requestInterceptor(interceptor)
-                .target(AsgardeoAPIResourceScopesClient.class, applicationsServerBase);
+                .target(AsgardeoAPIResourceScopesClient.class, apiResourceServerBase);
+
+        asgardeoSCIMRolesClient = feign.Feign.builder()
+                .client(new feign.okhttp.OkHttpClient())
+                .encoder(new feign.gson.GsonEncoder())
+                .decoder(new feign.gson.GsonDecoder())
+                .logger(new feign.slf4j.Slf4jLogger())
+                .requestInterceptor(interceptor)
+                .target(AsgardeoSCIMRolesClient.class, rolesEndpoint);
 
         globalApiResourceId = doesAPIResourceExistAndGetId();
     }
@@ -215,7 +241,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         String appId = resolveAppIdByClientId(created.getClientId());
 
         try {
-            apiResourceClient.authorizeAPItoApp(appId, new AsgardeoAPIAuthRequest(globalApiResourceId));
+            appClient.authorizeAPItoApp(appId, new AsgardeoAPIAuthRequest(globalApiResourceId));
         }catch (FeignException e){
             handleException("Couldn't Authorize Resource API to OAuth Application with Application Id: "+appId, e);
         }
@@ -266,7 +292,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         // will loop through the results 300 at a time to be safe
         while(true){
-            AsgardeoApplicationsResponse page = appListClient.list(limit, "clientId", offset);
+            AsgardeoApplicationsResponse page = appClient.list(limit, "clientId", offset);
 
             if (page.getApplications() != null){
                 for(AsgardeoApplicationsResponse.App app : page.getApplications()){
@@ -744,15 +770,10 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     @Override
     public void registerScope(Scope scope) throws APIManagementException {
-        AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
-        req.setName((scope.getKey()));
-        req.setDisplayName(scope.getName());
-        req.setDescription(scope.getDescription());
 
-        AsgardeoScopeResponse created = apiResourceScopesClient.createScope(globalApiResourceId, Collections.singletonList(req));
-        if (created != null && created.getId() != null) {
-            scopeNameToIdMap.put(created.getName(), created.getId());
-        }
+        createScopesInAsgardeoResource( Collections.singleton(scope));
+
+        createAsgardeoRoleToScopeBindings(Collections.singleton(scope));
     }
 
     @Override
@@ -798,6 +819,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         }
 
         createScopesInAsgardeoResource(newLocalScopes);
+        createAsgardeoRoleToScopeBindings(newLocalScopes);
+
     }
 
     private void createScopesInAsgardeoResource(Set<Scope> newLocalScopes) {
@@ -832,7 +855,11 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             scopesToBeUpdated.add(req);
         }
 
-        apiResourceScopesClient.createScope(globalApiResourceId, scopesToBeUpdated);
+        AsgardeoScopeResponse created = apiResourceScopesClient.createScope(globalApiResourceId, scopesToBeUpdated);
+
+        if (created != null && created.getId() != null) {
+            scopeNameToIdMap.put(created.getName(), created.getId());
+        }
     }
 
 //    private String addScopePrefix(String scope){
@@ -857,25 +884,39 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             handleException("Failed to delete scope: " + scopeName + " from WSO2 IS7 API Resource: " +
                     AsgardeoConstants.GLOBAL_API_RESOURCE_NAME, e);
         }
+
+        // cleaner: remove the scope (permission) from roles too
+        try {
+            JsonArray roles = searchRoles(null);
+            List<String> filteredRoles = getAsgardeoRolesHavingScope(scopeName, roles);
+            removeWSO2IS7RoleToScopeBindings(scopeName, filteredRoles);
+        } catch (KeyManagerClientException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void updateScope(Scope scope) throws APIManagementException {
-//        String scopeId = scopeNameToIdMap.get(scope.getKey());
-//        if (scopeId == null) {
-//            // refresh cache
-//            getAllScopes();
-//            scopeId = scopeNameToIdMap.get(scope.getKey());
-//        }
-//        if (scopeId == null) {
-//            throw new APIManagementException("Scope not found in Asgardeo: " + scope.getKey());
-//        }
-//
-//        AsgardeoScopeUpdateRequest req = new AsgardeoScopeUpdateRequest();
-//        req.setDisplayName(scope.getName());
-//        req.setDescription(scope.getDescription());
-//
-//        apiResourceScopesClient.updateScope(globalApiResourceId, scopeId, req);
+
+        try {
+            if(globalApiResourceId == null)
+                globalApiResourceId = doesAPIResourceExistAndGetId();
+            if (globalApiResourceId != null) {
+                AsgardeoScopeUpdateRequest scopeInfo = new AsgardeoScopeUpdateRequest();
+                scopeInfo.setDisplayName(scope.getName());
+                scopeInfo.setDescription(scope.getDescription());
+                try {
+                    apiResourceScopesClient.updateScope(globalApiResourceId, scope.getKey(),
+                            scopeInfo);
+                } catch (KeyManagerClientException e) {
+                    handleException("Failed to update scope: " + scope.getName() + " Asgardeo API Resource: " +
+                            AsgardeoConstants.GLOBAL_API_RESOURCE_NAME, e);
+                }
+            }
+            syncRoleBindingsToScope(scope);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to update scope: " + scope.getName(), e);
+        }
     }
 
     @Override
@@ -930,11 +971,243 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         return created.getId();
     }
 
+    //Roles related
+
+    //Name + lookup helpers
+
+    //mirrors getWSO2IS7RoleName
+    // naming convention
+    private String toAsgardeoRoleName(String roleName) throws APIManagementException{
+        if (!enableRoleCreation) {
+            return roleName;
+        }
+        // When role creation is enabled, conventions of the WSO2 IS7 migration client are followed for roles.
+        if (roleName.startsWith("Internal/")) {
+            return roleName.replace("Internal/", "");
+        } else if (roleName.startsWith("Application/")) {
+            throw new APIManagementException("Role: " + roleName + " is invalid.");
+        }
+        return "apim_primary_" + roleName;
+    }
+
+    //mirrors getWSO2IS7RoleId
+    // search for an Asgardeo Role with a filter on the Display name
+    private String getAsgardeoRoleIdByName(String roleDisplayName) throws KeyManagerClientException {
+
+        String filter = "displayName eq " + roleDisplayName;
+        JsonArray roles = searchRoles(filter);
+        if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
+            return roles.get(0).getAsJsonObject().get("id").getAsString();
+        }
+        return null;
+    }
+
+    //copied from IS 7 KM
+    // searches Asgardeo Roles adding a filter if given
+    private JsonArray searchRoles(String filter) throws KeyManagerClientException {
+
+        JsonObject payload = new JsonObject();
+        JsonArray schemas = new JsonArray();
+        schemas.add(AsgardeoConstants.SEARCH_REQUEST_SCHEMA);
+        payload.add("schemas", schemas);
+        if (filter != null) {
+            payload.addProperty("filter", filter);
+        }
+        JsonObject rolesResponse = asgardeoSCIMRolesClient.searchRoles(payload);
+        return rolesResponse.getAsJsonArray("Resources");
+    }
+
+    //copied from IS7 KM
+    // gets the roles from a scope as a list of strings
     private List<String> getRoles(Scope scope) {
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(scope.getRoles()) && scope.getRoles().trim().split(",").length > 0) {
             return Arrays.asList(scope.getRoles().trim().split(","));
         }
         return Collections.emptyList();
+    }
+
+    //role creation and permission primitives
+
+    //mirrors createWSO2IS7Role
+    // creates a role in Asgardeo
+    private void createAsgardeoRole(String displayName, List<Map<String, String>> scopes) throws APIManagementException {
+
+        AsgardeoRoleInfo role = new AsgardeoRoleInfo();
+        role.setDisplayName(displayName);
+        role.setPermissions(scopes);
+        try {
+            asgardeoSCIMRolesClient.createRole(role);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to create role: " + displayName, e);
+        }
+    }
+
+    //mirrors addScopeToWSO2IS7Role
+    // fetches existing permissions as scopes from the role found by role id and creates a new list of permissions including
+    // the scope to add. then updates
+    private void addScopeToAsgardeoRole(Scope scope, String roleId) throws APIManagementException {
+
+        try {
+            AsgardeoRoleInfo role = asgardeoSCIMRolesClient.getRole(roleId);
+            List<Map<String, String>> permissions = role.getPermissions();
+
+            List<AsgardeoPatchRoleOperationInfo.Permission> allPermissions = new ArrayList<>();
+            for (Map<String, String> existingPermission : permissions) {
+                AsgardeoPatchRoleOperationInfo.Permission permission = new AsgardeoPatchRoleOperationInfo.Permission();
+                permission.setValue(existingPermission.get("value"));
+                permission.setDisplay(existingPermission.get("display"));
+                allPermissions.add(permission);
+            }
+            AsgardeoPatchRoleOperationInfo.Permission addedPermission = new AsgardeoPatchRoleOperationInfo.Permission();
+            addedPermission.setValue(scope.getKey());
+            addedPermission.setDisplay(scope.getName());
+            allPermissions.add(addedPermission);
+
+            updateAsgardeoRoleWithScopes(roleId, allPermissions);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to add scope: " + scope.getKey() + " to the role with ID: " + roleId, e);
+        }
+    }
+
+    //mirrors updateWSO2IS7RoleWithScopes
+    //replaces the permissions with the list of new permissions
+    private void updateAsgardeoRoleWithScopes(String roleId, List<AsgardeoPatchRoleOperationInfo.Permission> scopes)
+            throws KeyManagerClientException {
+        AsgardeoPatchRoleOperationInfo.Value value = new AsgardeoPatchRoleOperationInfo.Value();
+        value.setPermissions(scopes);
+
+        AsgardeoPatchRoleOperationInfo.Operation replaceOperation =
+                new AsgardeoPatchRoleOperationInfo.Operation();
+        replaceOperation.setOp("replace");
+        replaceOperation.setValue(value);
+
+        AsgardeoPatchRoleOperationInfo patchOperationInfo = new AsgardeoPatchRoleOperationInfo();
+        patchOperationInfo.setOperations(Collections.singletonList(replaceOperation));
+        asgardeoSCIMRolesClient.patchRole(roleId, patchOperationInfo);
+    }
+
+    //mirrors removeWSO2IS7RoleToScopeBindings
+    // fetches existing permissions as scopes from the role and creates a new list of permissions excluding the one to remove
+    //then updates
+    private void removeWSO2IS7RoleToScopeBindings(String scopeName, List<String> roles) throws APIManagementException {
+        for (String role : roles) {
+            try {
+                String roleName = toAsgardeoRoleName(role);
+                String roleId = getAsgardeoRoleIdByName(roleName);
+                if (roleId != null) {
+                    AsgardeoRoleInfo roleInfo = asgardeoSCIMRolesClient.getRole(roleId);
+                    List<Map<String, String>> existingScopes = roleInfo.getPermissions();
+
+                    // Update the role with all the existing scopes(permissions) except the given scope(permission)
+                    List<AsgardeoPatchRoleOperationInfo.Permission> permissions = new ArrayList<>();
+                    for (Map<String, String> existingScope : existingScopes) {
+                        if (!scopeName.equals(existingScope.get("value"))) {
+                            AsgardeoPatchRoleOperationInfo.Permission permission =
+                                    new AsgardeoPatchRoleOperationInfo.Permission();
+                            permission.setValue(existingScope.get("value"));
+                            permissions.add(permission);
+                        }
+                    }
+                    updateAsgardeoRoleWithScopes(roleId, permissions);
+                }
+            } catch (KeyManagerClientException e) {
+                handleException("Failed to remove role-to-scope bindings for role: " + role, e);
+            }
+        }
+    }
+
+    // binding roles and scopes
+
+    //mirrors createWSO2IS7RoleToScopeBindings
+    // looks at every role inside every scope passed to this.
+    // then if Asgardeo has that role, adds scope to the role on Asgardeo
+    // if Asgardeo does not have that role, create the role setting the scope as a permission if role creation is enabled
+    private void createAsgardeoRoleToScopeBindings(Set<Scope> scopes) throws APIManagementException {
+
+        for (Scope scope : scopes) {
+            List<String> roles = getRoles(scope);
+            for (String apimRole : roles) {
+                String is7RoleName = toAsgardeoRoleName(apimRole);
+                try {
+                    String roleId = getAsgardeoRoleIdByName(is7RoleName);
+                    if (roleId != null) {
+                        // Add this scope(permission) to existing role
+                        addScopeToAsgardeoRole(scope, roleId);
+                    } else if (enableRoleCreation) {
+                        // Create new role with this scope(permission)
+                        Map<String, String> wso2IS7Scope = new HashMap<>();
+                        wso2IS7Scope.put("value", scope.getKey());
+                        wso2IS7Scope.put("display", scope.getName());
+                        createAsgardeoRole(is7RoleName, Collections.singletonList(wso2IS7Scope));
+                    }
+                } catch (KeyManagerClientException e) {
+                    handleException("Failed to get the role ID for role: " + apimRole, e);
+                }
+            }
+        }
+    }
+
+    // update reconciliation
+
+    //mirrors getWSO2IS7RolesHavingScope
+    // finds and returns a list of roles from Asgardeo having the scope (permission) passed to the function
+    private List<String> getAsgardeoRolesHavingScope(String scopeName, JsonArray roles) {
+        List<String> scopeRoles = new ArrayList<>();
+        if (roles != null && !roles.isJsonNull()) {
+            for (JsonElement role : roles) {
+                JsonArray permissions = role.getAsJsonObject().getAsJsonArray("permissions");
+                if (permissions != null && !permissions.isJsonNull()) {
+                    for (JsonElement permission : permissions) {
+                        if (scopeName.equals(permission.getAsJsonObject().get("value").getAsString())) {
+                            // This role has the given scope(permission)
+                            scopeRoles.add(role.getAsJsonObject().get("displayName").getAsString());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return scopeRoles;
+    }
+
+    //mirrors getAPIMRolesFromIS7Roles
+    private List<String> toAPIMRolesNames(List<String> is7Roles) {
+        return is7Roles.stream()
+                .map(roleName -> roleName.startsWith("apim_primary_")
+                        ? roleName.replaceFirst("^apim_primary_", "")
+                        : "Internal/" + roleName)
+                .collect(Collectors.toList());
+    }
+
+    //mirrors part of the method updateScopes
+    // if roles of a scope have changed, they will be updated and bound on Asgardeo
+    // likewise, remove the scope-role bindings of the roles that were removed from the scope
+    private void syncRoleBindingsToScope(Scope scope) throws KeyManagerClientException, APIManagementException {
+        JsonArray allRoles = searchRoles(null);
+        List<String> existingAPIMRoles = toAPIMRolesNames(
+                getAsgardeoRolesHavingScope(scope.getKey(), allRoles));
+
+        // Add new scope-to-role bindings
+        List<String> apimScopeRoles = getRoles(scope);
+
+        List<String> apimRoleBindingsToAdd = new ArrayList<>(apimScopeRoles);
+        apimRoleBindingsToAdd.removeAll(existingAPIMRoles);
+
+        if (!apimRoleBindingsToAdd.isEmpty()) {
+            Scope addableScope = new Scope();
+            addableScope.setKey(scope.getKey());
+            addableScope.setName(scope.getName());
+            addableScope.setDescription(scope.getDescription());
+            addableScope.setRoles(String.join(",", apimRoleBindingsToAdd));
+            createAsgardeoRoleToScopeBindings(Collections.singleton(addableScope));
+        }
+
+        // Remove old scope-to-role bindings
+        List<String> roleBindingsToRemove = new ArrayList<>(existingAPIMRoles);
+        roleBindingsToRemove.removeAll(apimScopeRoles);
+        if (!roleBindingsToRemove.isEmpty()) {
+            removeWSO2IS7RoleToScopeBindings(scope.getKey(), roleBindingsToRemove);
+        }
     }
 }

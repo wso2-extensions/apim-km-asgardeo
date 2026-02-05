@@ -71,15 +71,20 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_SECRET, "Client Secret", "input",
                 "Client Secret of Application with Approved API", "", true, true,
                 Collections.emptyList(), false));
+        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT,
+                "Asgardeo Application Management Endpoint", "input",
+                String.format("E.g., %s/api/server/v1/applications",
+                        AsgardeoConstants.BASE_URL_FORMAT), "", true, false,
+                Collections.emptyList(), false));
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT,
                 "Asgardeo API Resource Management Endpoint", "input",
                 String.format("E.g., %s/api/server/v1/api-resources",
-                        org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "", true, false,
+                        AsgardeoConstants.BASE_URL_FORMAT), "", true, false,
                 Collections.emptyList(), false));
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT,
                 "Asgardeo Roles Endpoint", "input",
                 String.format("E.g., %s/scim2/v2/Roles",
-                        org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "", true, false,
+                        AsgardeoConstants.BASE_URL_FORMAT), "", true, false,
                 Collections.emptyList(), false));
         configurationDtoList.add(new ConfigurationDto("enable_roles_creation",
                 "Create roles in Asgardeo", "checkbox",
