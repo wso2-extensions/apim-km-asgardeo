@@ -3,6 +3,7 @@ package org.wso2.asgardeo.client.model;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
+import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 
 import java.util.List;
 
@@ -25,6 +26,6 @@ public interface AsgardeoAPIResourceScopesClient {
 
     @RequestLine("DELETE /api-resources/{apiResourceId}/scopes/{scopeName}")
     void deleteScope(@Param("apiResourceId") String apiResourceId,
-                     @Param("scopeName") String scopeName);
+                     @Param("scopeName") String scopeName) throws KeyManagerClientException;
 }
 
