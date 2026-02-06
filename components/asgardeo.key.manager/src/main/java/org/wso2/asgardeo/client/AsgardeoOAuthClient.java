@@ -37,6 +37,8 @@ import org.wso2.asgardeo.client.model.AsgardeoAccessTokenResponse;
 import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -107,7 +109,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         else
             tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
 
-        //TODO addKeyManagerConfigsAsSystemProperties
+        addKeyManagerConfigsAsSystemProperties(tokenEndpoint);
 
         String introspectionEndpoint;
         if(configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT) != null)
@@ -203,6 +205,34 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .target(AsgardeoSCIMRolesClient.class, rolesEndpoint);
 
         globalApiResourceId = doesAPIResourceExistAndGetId();
+    }
+
+    private void addKeyManagerConfigsAsSystemProperties(String serviceUrl) {
+
+        URL keyManagerURL;
+        try {
+            keyManagerURL = new URL(serviceUrl);
+            String hostname = keyManagerURL.getHost();
+
+            int port = keyManagerURL.getPort();
+            if (port == -1) {
+                if (APIConstants.HTTPS_PROTOCOL.equals(keyManagerURL.getProtocol())) {
+                    port = APIConstants.HTTPS_PROTOCOL_PORT;
+                } else {
+                    port = APIConstants.HTTP_PROTOCOL_PORT;
+                }
+            }
+            System.setProperty(APIConstants.KEYMANAGER_PORT, String.valueOf(port));
+
+            if (hostname.equals(System.getProperty(APIConstants.CARBON_LOCALIP))) {
+                System.setProperty(APIConstants.KEYMANAGER_HOSTNAME, "localhost");
+            } else {
+                System.setProperty(APIConstants.KEYMANAGER_HOSTNAME, hostname);
+            }
+            //Since this is the server startup.Ignore the exceptions,invoked at the server startup
+        } catch (MalformedURLException e) {
+            log.error("Exception While resolving KeyManager Server URL or Port " + e.getMessage(), e);
+        }
     }
 
     /**
