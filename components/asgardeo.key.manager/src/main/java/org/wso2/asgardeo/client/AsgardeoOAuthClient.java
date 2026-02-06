@@ -91,7 +91,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             issueJWTTokens = (boolean) configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE);
         else issueJWTTokens = false; //default to opaque
 
-        enableRoleCreation = true;
+        if (configuration.getParameter(AsgardeoConstants.ENABLE_ROLE_CREATION) instanceof Boolean) {
+            enableRoleCreation = (Boolean) configuration.getParameter(AsgardeoConstants.ENABLE_ROLE_CREATION);
+        }else enableRoleCreation = false;
 
         String dcrEndpoint;
         if(configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null)
@@ -105,6 +107,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         else
             tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
 
+        //TODO addKeyManagerConfigsAsSystemProperties
+
         String introspectionEndpoint;
         if(configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT) != null)
             introspectionEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT);
@@ -112,16 +116,24 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             introspectionEndpoint = baseURL + "/t/" + org + "/oauth2/introspect";
 
         String rolesEndpoint;
-//        if (configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT) != null) {
-//            rolesEndpoint = (String) configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT);
-//        } else {
+        if (configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT) != null) {
+            rolesEndpoint = (String) configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT);
+        } else {
             rolesEndpoint = baseURL + "/t/" + org + "/scim2/v2/Roles";
-//        }
+        }
 
-        // for JWT conversion - Application management API endpoint and API  resource endpoint
-        String applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1/application";
+        //  Application management API endpoint and API  resource endpoint
+        String applicationsServerBase;
+        if(configuration.getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT) != null){
+            applicationsServerBase = (String) configuration.getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT);
+        }else
+            applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1/application";
 
-        String apiResourceServerBase =   baseURL + "/t/" + org + "/api/server/v1/api-resources";
+        String apiResourceServerBase;
+        if(configuration.getParameter(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT) != null){
+            apiResourceServerBase = (String) configuration.getParameter(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT);
+        }else
+            apiResourceServerBase =   baseURL + "/t/" + org + "/api/server/v1/api-resources";
 
         tokenClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())

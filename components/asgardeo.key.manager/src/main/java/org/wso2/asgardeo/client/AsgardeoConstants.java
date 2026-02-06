@@ -61,6 +61,7 @@ public class AsgardeoConstants {
     public static final String SEARCH_REQUEST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:SearchRequest";
 
     public static final String BASE_URL_FORMAT = "https://api.asgardeo.io/t/{organization-name}";
+    public static final String ENABLE_ROLE_CREATION = "asgardeo_role_creation";
 
     AsgardeoConstants() {
     }

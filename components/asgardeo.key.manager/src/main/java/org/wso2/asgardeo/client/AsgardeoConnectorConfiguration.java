@@ -86,7 +86,7 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
                 String.format("E.g., %s/scim2/v2/Roles",
                         AsgardeoConstants.BASE_URL_FORMAT), "", true, false,
                 Collections.emptyList(), false));
-        configurationDtoList.add(new ConfigurationDto("enable_roles_creation",
+        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.ENABLE_ROLE_CREATION,
                 "Create roles in Asgardeo", "checkbox",
                 "Create roles in Asgardeo, corresponding to the roles used in WSO2 API Manager.",
                 "Enable", false, false, Collections.singletonList("Enable"), false));
