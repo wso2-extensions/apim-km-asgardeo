@@ -832,35 +832,17 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 return;
             }
         }
-        List<AsgardeoScopeResponse> fetchedScopes = apiResourceScopesClient.listScopes(globalApiResourceId);
+       // List<AsgardeoScopeResponse> fetchedScopes = apiResourceScopesClient.listScopes(globalApiResourceId);
 
-        ArrayList<AsgardeoScopeCreateRequest> scopesToBeUpdated = new ArrayList<>(newLocalScopes.size() + fetchedScopes.size());
+        AsgardeoScopePatchRequest scopesToBeUpdated = new AsgardeoScopePatchRequest(newLocalScopes);
 
-        //create or update new scopes
-        for (Scope scope : newLocalScopes) {
-            AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
-            req.setName((scope.getKey()));
-            req.setDisplayName(scope.getName());
-            req.setDescription(scope.getDescription());
+        apiResourceClient.addScopes(globalApiResourceId, scopesToBeUpdated);
 
-            scopesToBeUpdated.add(req);
-        }
-
-        for(AsgardeoScopeResponse scope : fetchedScopes) {
-            AsgardeoScopeCreateRequest req = new AsgardeoScopeCreateRequest();
-            req.setName(scope.getName());
-            req.setDisplayName(scope.getDisplayName());
-            req.setDescription(scope.getDescription());
-
-            scopesToBeUpdated.add(req);
-        }
-
-        AsgardeoScopeResponse created = apiResourceScopesClient.createScope(globalApiResourceId, scopesToBeUpdated);
-
-        if (created != null && created.getId() != null) {
-            scopeNameToIdMap.put(created.getName(), created.getId());
-        }
+//        if (created != null && created.getId() != null) {
+//            scopeNameToIdMap.put(created.getName(), created.getId());
+//        }
     }
+
 
 //    private String addScopePrefix(String scope){
 //        return AsgardeoConstants.SCOPE_PREFIX.concat(scope);
@@ -886,13 +868,13 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         }
 
         // cleaner: remove the scope (permission) from roles too
-        try {
-            JsonArray roles = searchRoles(null);
-            List<String> filteredRoles = getAsgardeoRolesHavingScope(scopeName, roles);
-            removeWSO2IS7RoleToScopeBindings(scopeName, filteredRoles);
-        } catch (KeyManagerClientException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            JsonArray roles = searchRoles(null);
+//            List<String> filteredRoles = getAsgardeoRolesHavingScope(scopeName, roles);
+//            removeWSO2IS7RoleToScopeBindings(scopeName, filteredRoles);
+//        } catch (KeyManagerClientException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     @Override

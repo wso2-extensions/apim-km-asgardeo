@@ -16,7 +16,7 @@ public interface AsgardeoAPIResourceScopesClient {
     @RequestLine("PUT /{apiResourceId}/scopes")
     @Headers("Content-Type: application/json")
     AsgardeoScopeResponse createScope(@Param("apiResourceId") String apiResourceId,
-                                      List<AsgardeoScopeCreateRequest> body);
+                                      List<AsgardeoScopeInfo> body);
 
     @RequestLine("PATCH /{apiResourceId}/scopes/{scopeName}")
     @Headers("Content-Type: application/json")

@@ -1,10 +1,10 @@
 package org.wso2.asgardeo.client.model;
 
-import feign.FeignException;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
-import org.wso2.carbon.apimgt.api.APIManagementException;
+
+import java.util.List;
 
 public interface AsgardeoAPIResourceClient {
     @RequestLine("POST")
@@ -14,4 +14,7 @@ public interface AsgardeoAPIResourceClient {
     @RequestLine("GET ?limit={limit}&filter=name+eq+{name}")
     AsgardeoAPIResourceListResponse listAPIResources(@Param("limit") int limit, @Param("name") String filterName);
 
+    @RequestLine(("PATCH /{apiResourceId}"))
+    @Headers("Content-Type: application/json")
+    void addScopes(@Param("apiResourceId") String apiResourceId, AsgardeoScopePatchRequest body);
 }

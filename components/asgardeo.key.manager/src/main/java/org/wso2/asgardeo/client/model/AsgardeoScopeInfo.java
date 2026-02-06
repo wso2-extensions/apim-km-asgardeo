@@ -2,10 +2,9 @@ package org.wso2.asgardeo.client.model;
 
 
 import com.google.gson.annotations.SerializedName;
+import org.wso2.carbon.apimgt.api.model.Scope;
 
-import java.util.List;
-
-public class AsgardeoScopeCreateRequest {
+public class AsgardeoScopeInfo {
     @SerializedName("name")
     private String name;
 
@@ -14,6 +13,14 @@ public class AsgardeoScopeCreateRequest {
 
     @SerializedName("description")
     private String description;
+
+    public AsgardeoScopeInfo(){}
+
+    public AsgardeoScopeInfo(Scope scope){
+        name = scope.getKey();
+        displayName = scope.getName();
+        description = scope.getDescription();
+    }
 
     public String getName() {
         return name;
