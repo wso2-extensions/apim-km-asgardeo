@@ -6,7 +6,7 @@ import feign.Param;
 import feign.RequestLine;
 
 public interface AsgardeoAppClient {
-    @RequestLine("GET limit={limit}&attributes={attributes}&offset={offset}")
+    @RequestLine("GET ?limit={limit}&attributes={attributes}&offset={offset}")
     @Headers("Accept: application/json")
     AsgardeoApplicationsResponse list(
             @Param("limit") int limit,

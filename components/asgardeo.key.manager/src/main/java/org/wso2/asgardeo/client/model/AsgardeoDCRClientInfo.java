@@ -1,6 +1,7 @@
 package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
+import org.wso2.asgardeo.client.AsgardeoConstants;
 
 import java.util.List;
 
@@ -37,6 +38,15 @@ public class AsgardeoDCRClientInfo {
 
     @SerializedName("ext_id_token_lifetime")
     private long idTokenLifetime;
+
+    @SerializedName("ext_pkce_mandatory")
+    private boolean pkceMandatory;
+
+    @SerializedName("ext_pkce_support_plain")
+    private boolean pkcePlainText;
+
+    @SerializedName("ext_public_client")
+    private boolean publicClient;
 
     //set to "JWT" for JWT access token type
 
@@ -97,5 +107,33 @@ public class AsgardeoDCRClientInfo {
 
     public void setIdTokenLifetime(long idTokenLifetime) {
         this.idTokenLifetime = idTokenLifetime;
+    }
+
+    public void setPkceMandatory(boolean pkceMandatory){
+        this.pkceMandatory = pkceMandatory;
+    }
+
+    public void setPkceSupportPlain(boolean pkceSupportPlain){
+        this.pkcePlainText = pkceSupportPlain;
+    }
+
+    public String getTokenTypeExtension() {
+        return tokenTypeExtension;
+    }
+
+    public boolean isPkceMandatory() {
+        return pkceMandatory;
+    }
+
+    public boolean isPkcePlainText() {
+        return pkcePlainText;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
     }
 }

@@ -126,6 +126,23 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
                         "in seconds ", APIConstants.KeyManager.NOT_APPLICABLE_VALUE, false, false,
                         Collections.EMPTY_LIST, false));
 
+        ConfigurationDto configurationDtoPkceMandatory = new ConfigurationDto(AsgardeoConstants.PKCE_MANDATORY,
+                "Enable PKCE", "checkbox", "Enable PKCE", String.valueOf(false), false, false,
+                Collections.EMPTY_LIST, false);
+        applicationConfigurationsList.add(configurationDtoPkceMandatory);
+
+        ConfigurationDto configurationDtoPkcePlainText =
+                new ConfigurationDto(AsgardeoConstants.PKCE_SUPPORT_PLAIN,
+                        "Support PKCE Plain text", "checkbox", "S256 is recommended, plain text too can be used.",
+                        String.valueOf(false), false, false, Collections.EMPTY_LIST, false);
+        applicationConfigurationsList.add(configurationDtoPkcePlainText);
+
+        ConfigurationDto configurationDtoBypassClientCredentials =
+                new ConfigurationDto(AsgardeoConstants.PUBLIC_CLIENT,
+                        "Public client", "checkbox", "Allow authentication without the client secret.",
+                        String.valueOf(false), false, false, Collections.EMPTY_LIST, false);
+        applicationConfigurationsList.add(configurationDtoBypassClientCredentials);
+
 
         return applicationConfigurationsList;
     }

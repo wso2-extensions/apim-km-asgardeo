@@ -62,6 +62,9 @@ public class AsgardeoConstants {
 
     public static final String BASE_URL_FORMAT = "https://api.asgardeo.io/t/{organization-name}";
     public static final String ENABLE_ROLE_CREATION = "asgardeo_role_creation";
+    public static final String PKCE_MANDATORY = "ext_pkce_mandatory";
+    public static final String PKCE_SUPPORT_PLAIN = "ext_pkce_support_plain";
+    public static final String PUBLIC_CLIENT = "ext_public_client";
 
     AsgardeoConstants() {
     }
