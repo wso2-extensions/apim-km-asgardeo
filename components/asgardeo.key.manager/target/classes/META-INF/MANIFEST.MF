@@ -1,0 +1,29 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1768554034366
+Build-Jdk: 11.0.29
+Built-By: shakthi
+Bundle-Description: WSO2 is an open source application development softw
+ are company focused on providing service-oriented        architecture s
+ olutions for professional developers.
+Bundle-DocURL: http://www.wso2.org/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: asgardeo.key.manager
+Bundle-SymbolicName: asgardeo.key.manager
+Bundle-Vendor: WSO2
+Bundle-Version: 1.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+DynamicImport-Package: *
+Export-Package: org.wso2.asgardeo.client;version="1.0.0.SNAPSHOT";uses:=
+ "org.wso2.carbon.apimgt.api,org.wso2.carbon.apimgt.api.model,org.wso2.c
+ arbon.apimgt.impl"
+Import-Package: org.wso2.carbon.apimgt.api;version="[6.7.0,10.0.0)",org.
+ wso2.carbon.apimgt.api.model;version="[6.7.0,10.0.0)",org.wso2.carbon.a
+ pimgt.impl;version="[6.7.0,10.0.0)",org.wso2.carbon.apimgt.impl.dao;ver
+ sion="[6.7.0,10.0.0)",org.apache.commons.logging;resolution:=optional;v
+ ersion="[1.2,2)"
+Provide-Capability: osgi.service;objectClass:List<String>="org.wso2.carb
+ on.apimgt.api.model.KeyManagerConnectorConfiguration"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Service-Component: OSGI-INF/custom.configuration.component.xml
+Tool: Bnd-3.2.0.201605172007
