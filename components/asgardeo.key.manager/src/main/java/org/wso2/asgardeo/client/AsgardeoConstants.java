@@ -24,6 +24,7 @@ public class AsgardeoConstants {
     public static final String UTF_8 = "UTF-8";
     public static final String ASGARDEO_TYPE = "Asgardeo";
     public static final String DISPLAY_NAME = "Asgardeo";
+    public static final String ASGARDEO_BASE_URL = "https://api.asgardeo.io";
 
     public static final String ORG_NAME = "org_name";
     public static final String MGMT_CLIENT_ID = "mgmt_client_id";
@@ -37,10 +38,13 @@ public class AsgardeoConstants {
     public static final String ERROR_ENCODING_METHOD_NOT_SUPPORTED = "Encoding method is not supported";
     public static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
-    public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view internal_dcr_update internal_dcr_delete " +
-            "internal_application_mgt_view internal_application_mgt_update "+
-            "internal_api_resource_create internal_api_resource_view internal_api_resource_update internal_api_resource_delete "+
-            "internal_role_mgt_view internal_role_mgt_create internal_role_mgt_update internal_role_mgt_delete";
+    public static final String DCR_SCOPES = "internal_dcr_create internal_dcr_view " +
+            "internal_dcr_update internal_dcr_delete " +
+            "internal_application_mgt_view internal_application_mgt_update " +
+            "internal_api_resource_create internal_api_resource_view " +
+            "internal_api_resource_update internal_api_resource_delete " +
+            "internal_role_mgt_view internal_role_mgt_create internal_role_mgt_update " +
+            "internal_role_mgt_delete";
     public static final String TOKEN_APPLICATION = "APPLICATION";
     public static final String TOKEN_STATE_INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
     public static final String TOKEN_STATE_ACTIVE = "ACTIVE";

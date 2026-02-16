@@ -4,7 +4,11 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
+/**
+ * Represents the Patch Role Operation payload sent to Asgardeo.
+ */
 public class AsgardeoPatchRoleOperationInfo {
+
     @SerializedName("Operations")
     private List<Operation> operations;
 

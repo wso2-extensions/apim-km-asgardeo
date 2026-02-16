@@ -5,8 +5,11 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents the role info payload / body in Asgardeo.
+ */
 public class AsgardeoRoleInfo {
-    //taken from WSO2IS7RoleInfo
+
     @SerializedName("id")
     private String id;
 

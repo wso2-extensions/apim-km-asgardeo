@@ -2,6 +2,9 @@ package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Represents the introspection response returned from Asgardeo.
+ */
 public class AsgardeoIntrospectionResponse {
 
     @SerializedName("active")

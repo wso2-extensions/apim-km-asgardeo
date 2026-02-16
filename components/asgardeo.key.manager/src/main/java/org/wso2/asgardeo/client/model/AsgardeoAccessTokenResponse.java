@@ -2,15 +2,23 @@ package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Represents the access token response returned from Asgardeo.
+ */
 public class AsgardeoAccessTokenResponse {
+
     @SerializedName("access_token")
     private String accessToken;
+
     @SerializedName("token_type")
     private String tokenType;
+
     @SerializedName("expires_in")
     private long expiry;
+
     @SerializedName("scope")
     private String scope;
+
     private long createdAt;
 
     public String getAccessToken() {

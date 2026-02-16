@@ -4,6 +4,9 @@ package org.wso2.asgardeo.client.model;
 import com.google.gson.annotations.SerializedName;
 import org.wso2.carbon.apimgt.api.model.Scope;
 
+/**
+ * Represents Scopes info payload body sent to Asgardeo.
+ */
 public class AsgardeoScopeInfo {
     @SerializedName("name")
     private String name;
@@ -14,9 +17,10 @@ public class AsgardeoScopeInfo {
     @SerializedName("description")
     private String description;
 
-    public AsgardeoScopeInfo(){}
+    public AsgardeoScopeInfo() {
+    }
 
-    public AsgardeoScopeInfo(Scope scope){
+    public AsgardeoScopeInfo(Scope scope) {
         name = scope.getKey();
         displayName = scope.getName();
         description = scope.getDescription();

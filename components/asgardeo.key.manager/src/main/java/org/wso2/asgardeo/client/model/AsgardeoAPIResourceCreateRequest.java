@@ -2,6 +2,9 @@ package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Represents create API resource payload that creates the global API resource on Asgardeo.
+ */
 public class AsgardeoAPIResourceCreateRequest {
     @SerializedName("name")
     private String name;

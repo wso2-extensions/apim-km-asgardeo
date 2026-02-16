@@ -2,6 +2,9 @@ package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Represents body of API Resource response from Asgardeo.
+ */
 public class AsgardeoAPIResourceResponse {
     @SerializedName("id")
     private String id;

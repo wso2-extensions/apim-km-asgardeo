@@ -17,16 +17,49 @@
  */
 package org.wso2.asgardeo.client;
 
-import com.google.gson.*;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import feign.FeignException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
-import org.wso2.asgardeo.client.model.*;
+import org.wso2.asgardeo.client.model.AsgardeoAPIAuthRequest;
+import org.wso2.asgardeo.client.model.AsgardeoAPIResourceClient;
+import org.wso2.asgardeo.client.model.AsgardeoAPIResourceCreateRequest;
+import org.wso2.asgardeo.client.model.AsgardeoAPIResourceListResponse;
+import org.wso2.asgardeo.client.model.AsgardeoAPIResourceResponse;
+import org.wso2.asgardeo.client.model.AsgardeoAPIResourceScopesClient;
+import org.wso2.asgardeo.client.model.AsgardeoAppClient;
+import org.wso2.asgardeo.client.model.AsgardeoApplicationsResponse;
+import org.wso2.asgardeo.client.model.AsgardeoDCRAuthInterceptor;
+import org.wso2.asgardeo.client.model.AsgardeoDCRClient;
+import org.wso2.asgardeo.client.model.AsgardeoDCRClientInfo;
+import org.wso2.asgardeo.client.model.AsgardeoIntrospectionClient;
+import org.wso2.asgardeo.client.model.AsgardeoIntrospectionResponse;
+import org.wso2.asgardeo.client.model.AsgardeoPatchRoleOperationInfo;
+import org.wso2.asgardeo.client.model.AsgardeoRoleInfo;
+import org.wso2.asgardeo.client.model.AsgardeoSCIMRolesClient;
+import org.wso2.asgardeo.client.model.AsgardeoScopePatchRequest;
+import org.wso2.asgardeo.client.model.AsgardeoScopeResponse;
+import org.wso2.asgardeo.client.model.AsgardeoScopeUpdateRequest;
+import org.wso2.asgardeo.client.model.AsgardeoTokenClient;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
-import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
+import org.wso2.carbon.apimgt.api.model.AccessTokenRequest;
+import org.wso2.carbon.apimgt.api.model.ApplicationConstants;
+import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
+import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
+import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
+import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
+import org.wso2.carbon.apimgt.api.model.Scope;
+import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
@@ -40,29 +73,35 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * This class provides the implementation to use "Custom" Authorization Server for managing
+ * This class provides the implementation to use Asgardeo  for managing
  * OAuth clients and Tokens needed by WSO2 API Manager.
  */
 public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     private static final Log log = LogFactory.getLog(AsgardeoOAuthClient.class);
 
+
     private AuthClient authClient;
     private AsgardeoTokenClient tokenClient;
     private AsgardeoDCRClient dcrClient;
     private AsgardeoAppClient appClient;
-    // private AsgardeoOIDCInboundClient oidcInboundClient;
     private AsgardeoIntrospectionClient introspectionClient;
     private AsgardeoAPIResourceClient apiResourceClient;
     private AsgardeoAPIResourceScopesClient apiResourceScopesClient;
     private AsgardeoSCIMRolesClient asgardeoSCIMRolesClient;
 
-    private Map<String, String> appIdMap;
     private final Map<String, String> scopeNameToIdMap = new ConcurrentHashMap<>();
 
 
@@ -83,41 +122,47 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         this.configuration = keyManagerConfiguration;
 
-        appIdMap = new ConcurrentHashMap<>(); //map for app id
         String org = (String) configuration.getParameter(AsgardeoConstants.ORG_NAME);
-        // COME BACK base url is hardcoded
-        String baseURL = "https://api.asgardeo.io";
+
+        String baseURL = AsgardeoConstants.ASGARDEO_BASE_URL;
 
         mgmtClientId = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_ID);
         mgmtClientSecret = (String) configuration.getParameter(AsgardeoConstants.MGMT_CLIENT_SECRET);
 
-        if (configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE) != null)
+        if (configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE) != null) {
             issueJWTTokens = (boolean) configuration.getParameter(AsgardeoConstants.ACCESS_TOKEN_TYPE);
-        else issueJWTTokens = false; //default to opaque
+        } else {
+            issueJWTTokens = false;
+        } //default to opaque
 
         if (configuration.getParameter(AsgardeoConstants.ENABLE_ROLE_CREATION) instanceof Boolean) {
             enableRoleCreation = (Boolean) configuration.getParameter(AsgardeoConstants.ENABLE_ROLE_CREATION);
-        } else enableRoleCreation = false;
+        } else {
+            enableRoleCreation = false;
+        }
 
         String dcrEndpoint;
-        if (configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null)
+        if (configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT) != null) {
             dcrEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT);
-        else
+        } else {
             dcrEndpoint = baseURL + "/t/" + org + "/api/identity/oauth2/dcr/v1.1/register";
+        }
 
         String tokenEndpoint;
-        if (configuration.getParameter(APIConstants.KeyManager.TOKEN_ENDPOINT) != null)
+        if (configuration.getParameter(APIConstants.KeyManager.TOKEN_ENDPOINT) != null) {
             tokenEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.TOKEN_ENDPOINT);
-        else
+        } else {
             tokenEndpoint = baseURL + "/t/" + org + "/oauth2/token";
+        }
 
         addKeyManagerConfigsAsSystemProperties(tokenEndpoint);
 
         String introspectionEndpoint;
-        if (configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT) != null)
+        if (configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT) != null) {
             introspectionEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.INTROSPECTION_ENDPOINT);
-        else
+        } else {
             introspectionEndpoint = baseURL + "/t/" + org + "/oauth2/introspect";
+        }
 
         String rolesEndpoint;
         if (configuration.getParameter(AsgardeoConstants.ROLES_MANAGEMENT_ENDPOINT) != null) {
@@ -129,15 +174,18 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         //  Application management API endpoint and API  resource endpoint
         String applicationsServerBase;
         if (configuration.getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT) != null) {
-            applicationsServerBase = (String) configuration.getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT);
-        } else
+            applicationsServerBase = (String) configuration
+                    .getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT);
+        } else {
             applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1/application";
+        }
 
         String apiResourceServerBase;
         if (configuration.getParameter(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT) != null) {
             apiResourceServerBase = (String) configuration.getParameter(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT);
-        } else
+        } else {
             apiResourceServerBase = baseURL + "/t/" + org + "/api/server/v1/api-resources";
+        }
 
         tokenClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -161,7 +209,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .target(AsgardeoIntrospectionClient.class, introspectionEndpoint);
 
 
-        AsgardeoDCRAuthInterceptor interceptor = new AsgardeoDCRAuthInterceptor(tokenClient, mgmtClientId, mgmtClientSecret);
+        AsgardeoDCRAuthInterceptor interceptor = new AsgardeoDCRAuthInterceptor(tokenClient,
+                                                                                mgmtClientId, mgmtClientSecret);
 
         dcrClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -178,16 +227,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 .logger(new feign.slf4j.Slf4jLogger())
                 .requestInterceptor(interceptor)
                 .target(AsgardeoAppClient.class, applicationsServerBase);
-
-        // not needed as JWT token type can be set through a parameter in the DCR payload. but kept this in case we need
-        // to use this client in the future
-//        oidcInboundClient = feign.Feign.builder()
-//                .client(new feign.okhttp.OkHttpClient())
-//                .encoder(new feign.gson.GsonEncoder())
-//                .decoder(new feign.gson.GsonDecoder())
-//                .logger(new feign.slf4j.Slf4jLogger())
-//                .requestInterceptor(interceptor)
-//                .target(AsgardeoOIDCInboundClient.class, applicationsServerBase);
 
         apiResourceClient = feign.Feign.builder()
                 .client(new feign.okhttp.OkHttpClient())
@@ -216,6 +255,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         globalApiResourceId = doesAPIResourceExistAndGetId();
     }
 
+    // copied from AMDefaultKeyManager
     private void addKeyManagerConfigsAsSystemProperties(String serviceUrl) {
 
         URL keyManagerURL;
@@ -263,17 +303,24 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
             created = dcrClient.create(body);
 
-        } catch (KeyManagerClientException e) {
-            handleException("Cannot create OAuth Application: " + body.getClientName() + " for Application " + in.getClientName(), e);
+        } catch (feign.FeignException e) {
+            handleException("Cannot create OAuth Application: " + body.getClientName() + " for Application "
+                    + in.getClientName(), e);
             return null;
         }
 
         try {
             authorizeAPItoApp(created);
-        } catch (APIManagementException e) {
+        } catch (APIManagementException | feign.FeignException e) {
             handleException("Couldn't authorize scopes API resource to OAuthApplication: " + body.getClientName(), e);
         }
         return createOAuthApplicationInfo(created);
+    }
+
+    private void authorizeAPItoApp(AsgardeoDCRClientInfo created) throws APIManagementException, feign.FeignException {
+        String appId = resolveAppIdByClientId(created.getClientId());
+
+        appClient.authorizeAPItoApp(appId, new AsgardeoAPIAuthRequest(globalApiResourceId));
     }
 
     @NotNull
@@ -283,7 +330,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         String keyType = (String) in.getParameter(ApplicationConstants.APP_KEY_TYPE);
         String user = (String) in.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
 
-        String clientName = (user != null ? user : "apim") + "_" + appName + "_" + appId.substring(0, 7) + (keyType != null ? "_" + keyType : "");
+        String clientName = (user != null ? user : "apim") + "_" + appName + "_" + appId.substring(0, 7) +
+                (keyType != null ? "_" + keyType : "");
         AsgardeoDCRClientInfo body = new AsgardeoDCRClientInfo();
 
         body.setClientName(clientName);
@@ -297,91 +345,49 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             body.setRedirectUris(Arrays.asList(callbackURLs));
         }
 
-        if (issueJWTTokens)
+        if (issueJWTTokens) {
             body.setTokenTypeAsJWT();
+        }
         return body;
     }
-
-    private void authorizeAPItoApp(AsgardeoDCRClientInfo created) throws APIManagementException {
-        String appId = resolveAppIdByClientId(created.getClientId());
-
-        try {
-            appClient.authorizeAPItoApp(appId, new AsgardeoAPIAuthRequest(globalApiResourceId));
-        } catch (FeignException e) {
-            handleException("Couldn't Authorize Resource API to OAuth Application with Application Id: " + appId, e);
-        }
-    }
-
-    // no longer required as DCR call can do this
-//    private void tryChangeAccessTokenToJWT(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) throws APIManagementException {
-//        try{
-//            String appId = resolveAppIdByClientId(created.getClientId());
-//
-//            AsgardeoOIDCInboundRequest inboundRequest = buildInboundPayload(created, oAuthAppRequest);
-//
-//            try {
-//                oidcInboundClient.updateOidcInbound(appId, inboundRequest);
-//            }catch(feign.FeignException e){
-//                log.warn("Failed to update OIDC config to JWT for client ID : "+created.getClientId()
-//                + " (app ID : "+appId+"). Falling back to Opaque type. HTTP "+e.status() +" body=" +e.contentUTF8());
-//            }
-//
-//            created.setId(appId);
-//        }catch(APIManagementException e){
-//            handleException("Could not change access token of service provider with ID : "+created.getClientId(), e);
-//        }
-//    }
-
-//    private AsgardeoOIDCInboundRequest buildInboundPayload(AsgardeoDCRClientInfo created, OAuthAppRequest oAuthAppRequest) {
-//        AsgardeoOIDCInboundRequest toBeBuilt = new AsgardeoOIDCInboundRequest();
-//
-//        toBeBuilt.setClientId(created.getClientId());
-//        toBeBuilt.setGrantTypes(created.getGrantTypes());
-//        toBeBuilt.setAllowedOrigins(Collections.emptyList());
-//
-//        AsgardeoOIDCInboundRequest.AccessToken accessToken = new AsgardeoOIDCInboundRequest.AccessToken("JWT", 3600, 3600);
-//
-//        toBeBuilt.setAccessToken(accessToken);
-//        return toBeBuilt;
-//    }
 
     // this method also provides fast lookup if the app id exists
     private String resolveAppIdByClientId(String clientId) throws APIManagementException {
         int limit = 300;
         int offset = 0;
 
-        String appId = appIdMap.get(clientId); //first go through the map to see if it exists
-
-        if (appId != null)
-            return appId;
-
         // will loop through the results 300 at a time to be safe
-        while (true) {
-            AsgardeoApplicationsResponse page = appClient.list(limit, "clientId", offset);
+        try {
+            while (true) {
+                AsgardeoApplicationsResponse page = appClient.list(limit, "clientId", offset);
 
-            if (page.getApplications() != null) {
-                for (AsgardeoApplicationsResponse.App app : page.getApplications()) {
+                if (page.getApplications() != null) {
+                    for (AsgardeoApplicationsResponse.App app : page.getApplications()) {
 
-                    String retrievedClientId = app.getClientId();
-                    appIdMap.put(retrievedClientId, app.getId());
+                        String retrievedClientId = app.getClientId();
 
-                    if (clientId.equals(retrievedClientId)) {
-                        return app.getId();
+                        if (clientId.equals(retrievedClientId)) {
+                            return app.getId();
+                        }
                     }
                 }
+
+                int returnedResultsCount = page.getCount();
+                if (returnedResultsCount <= 0) {
+                    break;
+                }
+
+                offset += returnedResultsCount;
             }
-
-            int returnedResultsCount = page.getCount();
-            if (returnedResultsCount <= 0) break;
-
-            offset += returnedResultsCount;
+        } catch (feign.FeignException e) {
+            handleException("Error when retrieving applications on Asgardeo", e);
         }
 
         throw new APIManagementException("Could not find Asgardeo Application ID for Client ID : " + clientId);
     }
 
     @NotNull
-    private static List<String> getGrantTypesFromOAuthApp(OAuthApplicationInfo in) {
+    private List<String> getGrantTypesFromOAuthApp(OAuthApplicationInfo in) {
         List<String> grantTypes = new ArrayList<>();
         if (in.getParameter(APIConstants.JSON_GRANT_TYPES) != null) {
             grantTypes = Arrays.asList(((String) in.getParameter(APIConstants.JSON_GRANT_TYPES))
@@ -391,7 +397,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     }
 
     @NotNull
-    private static OAuthApplicationInfo createOAuthApplicationInfo(AsgardeoDCRClientInfo dcrClient) {
+    private OAuthApplicationInfo createOAuthApplicationInfo(AsgardeoDCRClientInfo dcrClient) {
         OAuthApplicationInfo out = new OAuthApplicationInfo();
         out.setClientName(dcrClient.getClientName());
         out.setClientId(dcrClient.getClientId());
@@ -426,7 +432,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     }
 
     @NotNull
-    private static Map<String, Object> getAdditionalPropertiesFromClient(AsgardeoDCRClientInfo dcrClient) {
+    private Map<String, Object> getAdditionalPropertiesFromClient(AsgardeoDCRClientInfo dcrClient) {
         Map<String, Object> additionalProperties = new HashMap<>();
         additionalProperties.put(AsgardeoConstants.APPLICATION_TOKEN_LIFETIME,
                 dcrClient.getApplicationTokenLifetime());
@@ -436,9 +442,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 dcrClient.getRefreshTokenLifetime());
         additionalProperties.put(AsgardeoConstants.ID_TOKEN_LIFETIME, dcrClient.getIdTokenLifetime());
 
-        //put app id in if needed later
-        if (dcrClient.getId() != null)
-            additionalProperties.put("asgardeoAppId", dcrClient.getId());
         return additionalProperties;
     }
 
@@ -463,22 +466,16 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         try {
             AsgardeoDCRClientInfo updated = dcrClient.update(in.getClientId(), body);
 
-//            try {
-//                String appId = resolveAppIdByClientId(in.getClientId());
-//                updated.setId(appId);
-//            }catch (APIManagementException e){
-//                System.out.println("Couldn't find app Id");
-//            }
-
             return createOAuthApplicationInfo(updated);
-        } catch (KeyManagerClientException e) {
+        } catch (feign.FeignException e) {
             handleException("Could not update service provider with ID: " + in.getClientId(), e);
             return null;
         }
 
     }
 
-    private void setAdditionalPropertiesToClient(OAuthApplicationInfo in, AsgardeoDCRClientInfo body) throws APIManagementException {
+    private void setAdditionalPropertiesToClient(OAuthApplicationInfo in, AsgardeoDCRClientInfo body)
+            throws APIManagementException {
         Object parameter = in.getParameter(APIConstants.JSON_ADDITIONAL_PROPERTIES);
 
         Map<String, Object> additionalProperties = new Gson().fromJson((String) parameter, Map.class);
@@ -608,7 +605,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public OAuthApplicationInfo updateApplicationOwner(OAuthAppRequest appInfoDTO, String owner)
             throws APIManagementException {
 
-        return null;
+        return null; //implementation is not applicable
     }
 
     /**
@@ -621,7 +618,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public void deleteApplication(String clientId) throws APIManagementException {
         try {
             dcrClient.delete(clientId);
-        } catch (KeyManagerClientException e) {
+        } catch (feign.FeignException e) {
             handleException("Cannot remove service provider for the given ID : " + clientId, e);
         }
     }
@@ -639,23 +636,19 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         try {
             AsgardeoDCRClientInfo retrieved = dcrClient.get(clientId);
 
-            if (retrieved == null)
+            if (retrieved == null) {
                 return null;
-
-//            try {
-//                String appId = resolveAppIdByClientId(clientId);
-//                retrieved.setId(appId);
-//            }catch (APIManagementException e){
-//                System.out.println("Couldn't find app Id");
-//            }
+            }
 
             return createOAuthApplicationInfo(retrieved);
-        } catch (KeyManagerClientException e) {
+        } catch (feign.FeignException e) {
             handleException("Cannot retrieve service provider for the given ID : " + clientId, e);
             return null;
         }
 
     }
+
+    //copied from IS7KeyManager
 
     /**
      * Gets new access token and returns it in an AccessTokenInfo object.
@@ -668,38 +661,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public AccessTokenInfo getNewApplicationAccessToken(AccessTokenRequest tokenRequest)
             throws APIManagementException {
 
-//        String clientID = accessTokenRequest.getClientId();
-//        String clientSecret = accessTokenRequest.getClientSecret();
-//
-//        //COME BACK grant type default to client cred for mvp
-//        String grantType = accessTokenRequest.getGrantType() != null
-//                ? accessTokenRequest.getGrantType() : "client_credentials";
-//
-//        //scopes handling if APIM passes a string[]
-//        String scope = "";
-//        if (accessTokenRequest.getScope() != null && accessTokenRequest.getScope().length > 0) {
-//            scope = String.join(" ", accessTokenRequest.getScope());
-//        }
-//
-//        String basicCredentials = getEncodedCredentials(clientID, clientSecret);
-//
-//        AsgardeoAccessTokenResponse retrievedToken = tokenClient.getAccessToken(grantType, scope, basicCredentials);
-//
-//        if(retrievedToken == null || retrievedToken.getAccessToken() == null || retrievedToken.getAccessToken().isEmpty())
-//            throw new APIManagementException("Asgardeo token endpoint returned an empty token!");
-//
-//        // mapping response to apim  model
-//        AccessTokenInfo response = new AccessTokenInfo();
-//        response.setConsumerKey(clientID);
-//        response.setConsumerSecret(clientSecret);
-//        response.setAccessToken(retrievedToken.getAccessToken());
-//        response.setValidityPeriod(retrievedToken.getExpiry());
-//        response.setKeyManager(getType());
-//
-//        if (retrievedToken.getScope() != null && !StringUtils.isBlank(retrievedToken.getScope())) {
-//            response.setScope(retrievedToken.getScope().trim().split("\\s+"));
-//        }
-//        return response;
         AccessTokenInfo tokenInfo;
 
         if (tokenRequest == null) {
@@ -717,8 +678,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         //Generate New Access Token
         String scopes = null;
-        if (tokenRequest.getScope() != null)
+        if (tokenRequest.getScope() != null) {
             scopes = String.join(" ", tokenRequest.getScope());
+        }
         TokenInfo tokenResponse;
 
         try {
@@ -775,9 +737,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         try {
             response = introspectionClient.introspect(accessToken, basicCredentials);
-        } catch (KeyManagerClientException e) {
-            throw new APIManagementException("Error occurred in token introspection!", e);
-        } catch (FeignException e) {
+        } catch (feign.FeignException e) {
 
             tokenInfo.setTokenValid(false);
             tokenInfo.setTokenState(AsgardeoConstants.TOKEN_STATE_INTROSPECTION_FAILED);
@@ -800,28 +760,39 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         tokenInfo.setTokenState(AsgardeoConstants.TOKEN_STATE_ACTIVE);
         tokenInfo.setApplicationToken(AsgardeoConstants.TOKEN_APPLICATION.equalsIgnoreCase(response.getAut()));
 
-        if (response.getClientId() != null)
+        if (response.getClientId() != null) {
             tokenInfo.setConsumerKey(response.getClientId());
+        }
 
-        if (response.getScope() != null && !StringUtils.isBlank(response.getScope()))
+        if (response.getScope() != null && !StringUtils.isBlank(response.getScope())) {
             tokenInfo.setScope(response.getScope().trim().split("\\s+"));
-        else
+        } else {
             tokenInfo.setScope(new String[0]);
+        }
 
-        if (response.getIat() != null) //issued at
+        if (response.getIat() != null) {
             tokenInfo.setIssuedTime(response.getIat() * 1000L);
+        }
 
         if (response.getExp() != null) { //expiry
             long validityMillis = Math.max(0, response.getExp() * 1000L - System.currentTimeMillis());
             tokenInfo.setValidityPeriod(validityMillis);
-            tokenInfo.addParameter("exp", response.getExp() * 1000L); //keeping it in parameters optionally
+            tokenInfo.addParameter("exp", response.getExp() * 1000L);
         }
 
         tokenInfo.addParameter("token_type", response.getTokenType());
-        if (response.getIss() != null) tokenInfo.addParameter("iss", response.getIss());
-        if (response.getAud() != null) tokenInfo.addParameter("aud", response.getAud());
-        if (response.getSub() != null) tokenInfo.addParameter("sub", response.getSub());
-        if (response.getJti() != null) tokenInfo.addParameter("jti", response.getJti());
+        if (response.getIss() != null) {
+            tokenInfo.addParameter("iss", response.getIss());
+        }
+        if (response.getAud() != null) {
+            tokenInfo.addParameter("aud", response.getAud());
+        }
+        if (response.getSub() != null) {
+            tokenInfo.addParameter("sub", response.getSub());
+        }
+        if (response.getJti() != null) {
+            tokenInfo.addParameter("jti", response.getJti());
+        }
 
         return tokenInfo;
     }
@@ -853,8 +824,9 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         String clientSecret = toMap.getClientSecret();
         OAuthApplicationInfo retrieved = retrieveApplication(clientId);
 
-        if (!retrieved.getClientSecret().equals(clientSecret))
+        if (!retrieved.getClientSecret().equals(clientSecret)) {
             throw new APIManagementException("Error when mapping.");
+        }
         return retrieved;
     }
 
@@ -909,19 +881,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     @Override
     public Map<String, Set<Scope>> getScopesForAPIS(String apiIdsString) throws APIManagementException {
 
-//        Map<String, Set<Scope>> apiToScopeMapping = new HashMap<>();
-//        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-//        Map<String, Set<String>> apiToScopeKeyMapping = apiMgtDAO.getScopesForAPIS(apiIdsString);
-//        for (String apiId : apiToScopeKeyMapping.keySet()) {
-//            Set<Scope> apiScopes = new LinkedHashSet<>();
-//            Set<String> scopeKeys = apiToScopeKeyMapping.get(apiId);
-//            for (String scopeKey : scopeKeys) {
-//                Scope scope = getScopeByName(scopeKey);
-//                apiScopes.add(scope);
-//            }
-//            apiToScopeMapping.put(apiId, apiScopes);
-//        }
-//        return apiToScopeMapping;
         return null;
     }
 
@@ -943,19 +902,24 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     public Map<String, Scope> getAllScopes() throws APIManagementException {
         Map<String, Scope> map = new HashMap<>();
 
-        List<AsgardeoScopeResponse> scopes = apiResourceScopesClient.listScopes(globalApiResourceId);
+        try {
+            List<AsgardeoScopeResponse> scopes = apiResourceScopesClient.listScopes(globalApiResourceId);
 
-        for (AsgardeoScopeResponse s : scopes) {
-            scopeNameToIdMap.put((s.getName()), s.getId());
+            for (AsgardeoScopeResponse s : scopes) {
+                scopeNameToIdMap.put((s.getName()), s.getId());
 
-            Scope scope = new Scope();
-            scope.setKey((s.getName()));
-            scope.setName(s.getDisplayName());
-            scope.setDescription(s.getDescription());
-            map.put(scope.getKey(), scope);
+                Scope scope = new Scope();
+                scope.setKey((s.getName()));
+                scope.setName(s.getDisplayName());
+                scope.setDescription(s.getDescription());
+                map.put(scope.getKey(), scope);
+            }
+
+            return map;
+        } catch (feign.FeignException e) {
+            handleException("Error while retrieving scopes!", e);
         }
-
-        return map;
+        return null;
     }
 
     @Override
@@ -980,7 +944,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     }
 
-    private void createScopesInAsgardeoResource(Set<Scope> newLocalScopes) {
+    private void createScopesInAsgardeoResource(Set<Scope> newLocalScopes) throws APIManagementException {
         if (globalApiResourceId == null) {
             try {
                 globalApiResourceId = doesAPIResourceExistAndGetId();
@@ -993,21 +957,12 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
         AsgardeoScopePatchRequest scopesToBeUpdated = new AsgardeoScopePatchRequest(newLocalScopes);
 
-        apiResourceClient.addScopes(globalApiResourceId, scopesToBeUpdated);
-
-//        if (created != null && created.getId() != null) {
-//            scopeNameToIdMap.put(created.getName(), created.getId());
-//        }
+        try {
+            apiResourceClient.addScopes(globalApiResourceId, scopesToBeUpdated);
+        } catch (FeignException e) {
+            handleException("Failed to add scopes to Global API Resource", e);
+        }
     }
-
-
-//    private String addScopePrefix(String scope){
-//        return AsgardeoConstants.SCOPE_PREFIX.concat(scope);
-//    }
-//
-//    private String removeScopePrefix(String scope){
-//        return scope.split(AsgardeoConstants.SCOPE_PREFIX)[1];
-//    }
 
     @Override
     public void detachResourceScopes(API api, Set<URITemplate> uriTemplates) throws APIManagementException {
@@ -1019,27 +974,19 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
         try {
             apiResourceScopesClient.deleteScope(globalApiResourceId, scopeName);
             scopeNameToIdMap.remove(scopeName);
-        } catch (KeyManagerClientException e) {
+        } catch (feign.FeignException e) {
             handleException("Failed to delete scope: " + scopeName + " from WSO2 IS7 API Resource: " +
                     AsgardeoConstants.GLOBAL_API_RESOURCE_NAME, e);
         }
-
-        // cleaner: remove the scope (permission) from roles too
-//        try {
-//            JsonArray roles = searchRoles(null);
-//            List<String> filteredRoles = getAsgardeoRolesHavingScope(scopeName, roles);
-//            removeWSO2IS7RoleToScopeBindings(scopeName, filteredRoles);
-//        } catch (KeyManagerClientException e) {
-//            throw new RuntimeException(e);
-//        }
     }
 
     @Override
     public void updateScope(Scope scope) throws APIManagementException {
 
         try {
-            if (globalApiResourceId == null)
+            if (globalApiResourceId == null) {
                 globalApiResourceId = doesAPIResourceExistAndGetId();
+            }
             if (globalApiResourceId != null) {
                 AsgardeoScopeUpdateRequest scopeInfo = new AsgardeoScopeUpdateRequest();
                 scopeInfo.setDisplayName(scope.getName());
@@ -1047,7 +994,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                 try {
                     apiResourceScopesClient.updateScope(globalApiResourceId, scope.getKey(),
                             scopeInfo);
-                } catch (KeyManagerClientException e) {
+                } catch (feign.FeignException e) {
                     handleException("Failed to update scope: " + scope.getName() + " Asgardeo API Resource: " +
                             AsgardeoConstants.GLOBAL_API_RESOURCE_NAME, e);
                 }
@@ -1091,23 +1038,36 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     private String doesAPIResourceExistAndGetId() throws APIManagementException {
         int limit = 100;
 
-        AsgardeoAPIResourceListResponse page = apiResourceClient.listAPIResources(limit, AsgardeoConstants.GLOBAL_API_RESOURCE_NAME);
-        if (page.getApiResources() != null)
-            for (AsgardeoAPIResourceResponse r : page.getApiResources())
-                if (AsgardeoConstants.GLOBAL_API_RESOURCE_NAME.equals(r.getName()))
-                    return r.getId();
+        try {
+            AsgardeoAPIResourceListResponse page = apiResourceClient
+                    .listAPIResources(limit, AsgardeoConstants.GLOBAL_API_RESOURCE_NAME);
+            if (page.getApiResources() != null) {
+                for (AsgardeoAPIResourceResponse r : page.getApiResources()) {
+                    if (AsgardeoConstants.GLOBAL_API_RESOURCE_NAME.equals(r.getName())) {
+                        return r.getId();
+                    }
+                }
+            }
+        } catch (feign.FeignException e) {
+            handleException("Failed to fetch API Resources from Asgardeo", e);
+        }
 
         //if not found, create it
         AsgardeoAPIResourceCreateRequest req = new AsgardeoAPIResourceCreateRequest();
         req.setName(AsgardeoConstants.GLOBAL_API_RESOURCE_NAME);
         req.setIdentifier(AsgardeoConstants.GLOBAL_API_RESOURCE_IDENTIFIER);
 
-        AsgardeoAPIResourceResponse created = apiResourceClient.createAPIResource(req);
-        if (created == null || created.getId() == null) {
-            throw new APIManagementException("Failed to create global API resource in Asgardeo.");
+        AsgardeoAPIResourceResponse created;
+        try {
+            created = apiResourceClient.createAPIResource(req);
+            if (created == null || created.getId() == null) {
+                throw new APIManagementException("Failed to create global API resource in Asgardeo.");
+            }
+            return created.getId();
+        } catch (FeignException e) {
+            handleException("Failed to create global API Resource on Asgardeo", e);
         }
-
-        return created.getId();
+        return null;
     }
 
     //Roles related
@@ -1131,19 +1091,24 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     //mirrors getWSO2IS7RoleId
     // search for an Asgardeo Role with a filter on the Display name
-    private String getAsgardeoRoleIdByName(String roleDisplayName) throws KeyManagerClientException {
+    private String getAsgardeoRoleIdByName(String roleDisplayName) throws APIManagementException {
 
         String filter = "displayName eq " + roleDisplayName;
-        JsonArray roles = searchRoles(filter);
-        if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
-            return roles.get(0).getAsJsonObject().get("id").getAsString();
+        try {
+            JsonArray roles = searchRoles(filter);
+
+            if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
+                return roles.get(0).getAsJsonObject().get("id").getAsString();
+            }
+        } catch (feign.FeignException e) {
+            handleException("Error when searching for roles", e);
         }
         return null;
     }
 
     //copied from IS 7 KM
     // searches Asgardeo Roles adding a filter if given
-    private JsonArray searchRoles(String filter) throws KeyManagerClientException {
+    private JsonArray searchRoles(String filter) throws feign.FeignException {
 
         JsonObject payload = new JsonObject();
         JsonArray schemas = new JsonArray();
@@ -1160,7 +1125,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     // gets the roles from a scope as a list of strings
     private List<String> getRoles(Scope scope) {
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(scope.getRoles()) && scope.getRoles().trim().split(",").length > 0) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(scope.getRoles()) &&
+                scope.getRoles().trim().split(",").length > 0) {
             return Arrays.asList(scope.getRoles().trim().split(","));
         }
         return Collections.emptyList();
@@ -1170,20 +1136,21 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
 
     //mirrors createWSO2IS7Role
     // creates a role in Asgardeo
-    private void createAsgardeoRole(String displayName, List<Map<String, String>> scopes) throws APIManagementException {
+    private void createAsgardeoRole(String displayName, List<Map<String, String>> scopes)
+            throws APIManagementException {
 
         AsgardeoRoleInfo role = new AsgardeoRoleInfo();
         role.setDisplayName(displayName);
         role.setPermissions(scopes);
         try {
             asgardeoSCIMRolesClient.createRole(role);
-        } catch (KeyManagerClientException e) {
+        } catch (feign.FeignException e) {
             handleException("Failed to create role: " + displayName, e);
         }
     }
 
     //mirrors addScopeToWSO2IS7Role
-    // fetches existing permissions as scopes from the role found by role id and creates a new list of permissions including
+    // fetches existing perms as scopes from the role found by role id and creates a new list of perms including
     // the scope to add. then updates
     private void addScopeToAsgardeoRole(Scope scope, String roleId) throws APIManagementException {
 
@@ -1204,7 +1171,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             allPermissions.add(addedPermission);
 
             updateAsgardeoRoleWithScopes(roleId, allPermissions);
-        } catch (KeyManagerClientException e) {
+        } catch (feign.FeignException e) {
             handleException("Failed to add scope: " + scope.getKey() + " to the role with ID: " + roleId, e);
         }
     }
@@ -1212,7 +1179,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     //mirrors updateWSO2IS7RoleWithScopes
     //replaces the permissions with the list of new permissions
     private void updateAsgardeoRoleWithScopes(String roleId, List<AsgardeoPatchRoleOperationInfo.Permission> scopes)
-            throws KeyManagerClientException {
+            throws feign.FeignException {
         AsgardeoPatchRoleOperationInfo.Value value = new AsgardeoPatchRoleOperationInfo.Value();
         value.setPermissions(scopes);
 
@@ -1227,7 +1194,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     }
 
     //mirrors removeWSO2IS7RoleToScopeBindings
-    // fetches existing permissions as scopes from the role and creates a new list of permissions excluding the one to remove
+    // fetches existing permissions as scopes from the role and creates a new list of perms excluding the one to remove
     //then updates
     private void removeWSO2IS7RoleToScopeBindings(String scopeName, List<String> roles) throws APIManagementException {
         for (String role : roles) {
@@ -1250,7 +1217,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                     }
                     updateAsgardeoRoleWithScopes(roleId, permissions);
                 }
-            } catch (KeyManagerClientException e) {
+            } catch (feign.FeignException e) {
                 handleException("Failed to remove role-to-scope bindings for role: " + role, e);
             }
         }
@@ -1261,7 +1228,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
     //mirrors createWSO2IS7RoleToScopeBindings
     // looks at every role inside every scope passed to this.
     // then if Asgardeo has that role, adds scope to the role on Asgardeo
-    // if Asgardeo does not have that role, create the role setting the scope as a permission if role creation is enabled
+    // if Asgardeo doesn't have that role, create the role setting the scope as a permission if role creation is enabled
     private void createAsgardeoRoleToScopeBindings(Set<Scope> scopes) throws APIManagementException {
 
         for (Scope scope : scopes) {
@@ -1280,7 +1247,7 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                         wso2IS7Scope.put("display", scope.getName());
                         createAsgardeoRole(is7RoleName, Collections.singletonList(wso2IS7Scope));
                     }
-                } catch (KeyManagerClientException e) {
+                } catch (feign.FeignException e) {
                     handleException("Failed to get the role ID for role: " + apimRole, e);
                 }
             }
@@ -1367,7 +1334,8 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
                         .parse((String) additionalProperties);
                 for (Map.Entry<String, JsonElement> entry : additionalPropertiesJson.entrySet()) {
                     String additionalProperty = entry.getValue().getAsString();
-                    if (org.apache.commons.lang3.StringUtils.isNotBlank(additionalProperty) && !org.apache.commons.lang3.StringUtils
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(additionalProperty) &&
+                            !org.apache.commons.lang3.StringUtils
                             .equals(additionalProperty, APIConstants.KeyManager.NOT_APPLICABLE_VALUE)) {
                         try {
                             if (AsgardeoConstants.PKCE_MANDATORY.equals(entry.getKey()) ||

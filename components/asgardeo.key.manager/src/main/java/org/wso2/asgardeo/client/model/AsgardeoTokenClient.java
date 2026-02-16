@@ -4,6 +4,9 @@ import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
 
+/**
+ * Represents the Asgardeo Token call client.
+ */
 public interface AsgardeoTokenClient {
     @RequestLine("POST")
     @Headers({"Content-Type: application/x-www-form-urlencoded", "Authorization: Basic {base64encodedString}"})

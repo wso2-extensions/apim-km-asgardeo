@@ -4,17 +4,22 @@ import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
 
-import java.util.List;
 
+/**
+ * Represents the Asgardeo API resource API call client.
+ */
 public interface AsgardeoAPIResourceClient {
     @RequestLine("POST")
     @Headers("Content-Type: application/json")
-    AsgardeoAPIResourceResponse createAPIResource(AsgardeoAPIResourceCreateRequest body);
+    AsgardeoAPIResourceResponse createAPIResource(AsgardeoAPIResourceCreateRequest body)
+            throws feign.FeignException;
 
     @RequestLine("GET ?limit={limit}&filter=name+eq+{name}")
-    AsgardeoAPIResourceListResponse listAPIResources(@Param("limit") int limit, @Param("name") String filterName);
+    AsgardeoAPIResourceListResponse listAPIResources(@Param("limit") int limit, @Param("name") String filterName)
+            throws feign.FeignException;
 
     @RequestLine(("PATCH /{apiResourceId}"))
     @Headers("Content-Type: application/json")
-    void addScopes(@Param("apiResourceId") String apiResourceId, AsgardeoScopePatchRequest body);
+    void addScopes(@Param("apiResourceId") String apiResourceId, AsgardeoScopePatchRequest body)
+            throws feign.FeignException;
 }

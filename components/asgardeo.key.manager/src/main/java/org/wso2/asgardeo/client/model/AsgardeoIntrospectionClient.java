@@ -3,8 +3,10 @@ package org.wso2.asgardeo.client.model;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
-import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 
+/**
+ * Represents the Asgardeo Introspection Client.
+ */
 public interface AsgardeoIntrospectionClient {
     @RequestLine("POST")
     @Headers({
@@ -13,5 +15,5 @@ public interface AsgardeoIntrospectionClient {
     })
     AsgardeoIntrospectionResponse introspect(@Param("token") String token,
                                              @Param("basic") String basic)
-            throws KeyManagerClientException, feign.FeignException;
+            throws feign.FeignException;
 }

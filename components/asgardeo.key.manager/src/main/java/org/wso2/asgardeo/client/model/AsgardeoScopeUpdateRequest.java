@@ -2,8 +2,10 @@ package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
 
+/**
+ * Represents an individual scope update payload Asgardeo.
+ */
 public class AsgardeoScopeUpdateRequest {
     @SerializedName("displayName")
     private String displayName;

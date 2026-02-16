@@ -2,9 +2,12 @@ package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
 
+/**
+ * Represents scope response returned from Asgardeo.
+ */
 public class AsgardeoScopeResponse {
+
     @SerializedName("id")
     private String id;
 

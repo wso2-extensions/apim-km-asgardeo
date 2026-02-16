@@ -2,12 +2,18 @@ package org.wso2.asgardeo.client.model;
 
 import java.util.List;
 
+/**
+ * Represents the OAuth App list response returned from Asgardeo when searching for Application ID.
+ */
 public class AsgardeoApplicationsResponse {
     private int totalResults;
     private int startIndex;
     private int count;
     private java.util.List<App> applications;
 
+    /**
+     * Represents the individual OAuth Apps returned from Asgardeo when searching for Application ID.
+     */
     public static class App {
         private String id;
         private String clientId;

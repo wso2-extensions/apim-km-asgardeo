@@ -1,14 +1,19 @@
 package org.wso2.asgardeo.client.model;
 
 import com.google.gson.annotations.SerializedName;
-import org.wso2.asgardeo.client.AsgardeoConstants;
 
 import java.util.List;
 
+/**
+ * Represents the DCR client information returned from Asgardeo.
+ */
 public class AsgardeoDCRClientInfo {
+
+    public AsgardeoDCRClientInfo() {}
 
     @SerializedName("id")
     private String id;
+
     @SerializedName("client_id")
     private String clientId;
 
@@ -50,20 +55,45 @@ public class AsgardeoDCRClientInfo {
 
     //set to "JWT" for JWT access token type
 
-    public String getClientName() { return clientName; }
-    public void setClientName(String clientName) { this.clientName = clientName; }
+    public String getClientName() {
+        return clientName;
+    }
 
-    public List<String> getGrantTypes() { return grantTypes; }
-    public void setGrantTypes(List<String> grantTypes) { this.grantTypes = grantTypes; }
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
 
-    public List<String> getRedirectUris() { return redirectUris; }
-    public void setRedirectUris(List<String> redirectUris) { this.redirectUris = redirectUris; }
+    public List<String> getGrantTypes() {
+        return grantTypes;
+    }
 
-    public String getClientId() { return clientId; }
-    public void setClientId(String clientId) { this.clientId = clientId; }
+    public void setGrantTypes(List<String> grantTypes) {
+        this.grantTypes = grantTypes;
+    }
 
-    public String getClientSecret() { return clientSecret; }
-    public void setClientSecret(String clientSecret) { this.clientSecret = clientSecret; }
+    public List<String> getRedirectUris() {
+        return redirectUris;
+    }
+
+    public void setRedirectUris(List<String> redirectUris) {
+        this.redirectUris = redirectUris;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+    }
 
     public String getId() {
         return id;
@@ -73,7 +103,7 @@ public class AsgardeoDCRClientInfo {
         this.id = id;
     }
 
-    public void setTokenTypeAsJWT(){
+    public void setTokenTypeAsJWT() {
         tokenTypeExtension = "JWT";
     }
 
@@ -109,11 +139,11 @@ public class AsgardeoDCRClientInfo {
         this.idTokenLifetime = idTokenLifetime;
     }
 
-    public void setPkceMandatory(boolean pkceMandatory){
+    public void setPkceMandatory(boolean pkceMandatory) {
         this.pkceMandatory = pkceMandatory;
     }
 
-    public void setPkceSupportPlain(boolean pkceSupportPlain){
+    public void setPkceSupportPlain(boolean pkceSupportPlain) {
         this.pkcePlainText = pkceSupportPlain;
     }
 

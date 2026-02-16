@@ -8,6 +8,9 @@ import org.wso2.asgardeo.client.AsgardeoConstants;
 import org.wso2.asgardeo.client.AsgardeoOAuthClient;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 
+/**
+ * Represents Auth Interceptor that retrieves / refreshes access token required for Asgardeo MGMT OAuth App Calls
+ */
 public class AsgardeoDCRAuthInterceptor implements RequestInterceptor {
     private static final Log log = LogFactory.getLog(AsgardeoDCRAuthInterceptor.class);
 
@@ -16,7 +19,8 @@ public class AsgardeoDCRAuthInterceptor implements RequestInterceptor {
     private String mgmtClientId;
     private String mgmtClientSecret;
 
-    public AsgardeoDCRAuthInterceptor(AsgardeoTokenClient asgardeoTokenClient, String consumerKey, String consumerSecret) {
+    public AsgardeoDCRAuthInterceptor(
+            AsgardeoTokenClient asgardeoTokenClient, String consumerKey, String consumerSecret) {
         this.tokenClient = asgardeoTokenClient;
         this.mgmtClientId = consumerKey;
         this.mgmtClientSecret = consumerSecret;
@@ -30,6 +34,7 @@ public class AsgardeoDCRAuthInterceptor implements RequestInterceptor {
         }
         requestTemplate.header("Authorization", "Bearer ".concat(cachedToken.getAccessToken()));
     }
+
     // extracted for readability
     private boolean tokenExpired() {
         return System.currentTimeMillis() >
@@ -40,13 +45,14 @@ public class AsgardeoDCRAuthInterceptor implements RequestInterceptor {
     /**
      * Renew the access token of the management API
      */
-    //COME BACK configs are hardcoded
     private void getAccessToken() {
         try {
-            String basicCredentials = AsgardeoOAuthClient.getEncodedCredentials(this.mgmtClientId, this.mgmtClientSecret);
+            String basicCredentials = AsgardeoOAuthClient.getEncodedCredentials(
+                    this.mgmtClientId, this.mgmtClientSecret);
             AsgardeoAccessTokenResponse accessTokenResponse =
-                    tokenClient.getAccessToken(AsgardeoConstants.GRANT_TYPE_CLIENT_CREDENTIALS,AsgardeoConstants.DCR_SCOPES,
-                             basicCredentials);
+                    tokenClient.getAccessToken(
+                            AsgardeoConstants.GRANT_TYPE_CLIENT_CREDENTIALS, AsgardeoConstants.DCR_SCOPES,
+                            basicCredentials);
             if (accessTokenResponse != null) {
                 this.cachedToken = accessTokenResponse;
                 this.cachedToken.setCreatedAt(System.currentTimeMillis());

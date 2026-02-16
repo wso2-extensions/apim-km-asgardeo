@@ -4,6 +4,9 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
+/**
+ * Represents the API resources list returned from Asgardeo used when searching for Global API Resource.
+ */
 public class AsgardeoAPIResourceListResponse {
     @SerializedName("totalResults")
     private int totalResults;
