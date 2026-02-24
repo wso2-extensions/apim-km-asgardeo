@@ -1,12 +1,12 @@
 /*
- *  Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -63,16 +63,14 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
                 "Name of the Organization with ", "", true, false,
                 Collections.emptyList(), false));
 
-
-        //COME BACK to change tooltip
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_ID,
                 "Client ID", "input",
-                "Client ID of Application with Approved API", "", true, false,
+                "Client ID of the Management Application", "", true, false,
                 Collections.emptyList(), false));
 
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.MGMT_CLIENT_SECRET,
                 "Client Secret", "input",
-                "Client Secret of Application with Approved API", "", true, true,
+                "Client Secret of the Management Application", "", true, true,
                 Collections.emptyList(), false));
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT,
                 "Asgardeo Application Management Endpoint", "input",
@@ -92,11 +90,6 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.ENABLE_ROLE_CREATION,
                 "Create roles in Asgardeo", "checkbox",
                 "Create roles in Asgardeo, corresponding to the roles used in WSO2 API Manager.",
-                "Enable", false, false, Collections.singletonList("Enable"), false));
-
-        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.ACCESS_TOKEN_TYPE,
-                "Prefer JWT Token Issuance", "checkbox",
-                "Choose to use JWT instead of Opaque as the Token Type",
                 "Enable", false, false, Collections.singletonList("Enable"), false));
 
         return configurationDtoList;

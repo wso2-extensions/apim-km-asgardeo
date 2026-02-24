@@ -3,14 +3,6 @@ A Key Manager Implementation to Integrate **Asgardeo** with **WSO2 API Manager 4
   
 > <span style="color:#ee3333">⚠ Under active development ⚠</span>  
 
-> <span style="color:#ee3333">⚠ Redirect URLs are hardcoded for now when Generating Keys. Do set them up manually on Asgardeo if you intend to use them with Authorization Code ⚠</span>
-
-
-[//]: # (___)
-
-[//]: # (## Table of Contents)
-
-[//]: # (- [Overview] &#40;#overview&#41;)
 
 ___
 ## Overview
@@ -78,13 +70,7 @@ https://api.asgardeo.io/t/<YOUR_ORGANIZATION>/oauth2/token/.well-known/openid-co
    - **Client ID**
    - **Client Secret**
 
-    >    ⚠ If you want **Asgardeo to issue JWT access tokens** instead of the default Opaque tokens:
-    >    - Enable **Prefer JWT Access Tokens**
-10. Under **Advanced Configurations**:
-- If **Prefer JWT Access Tokens** is **not enabled**, set:
-    - **Token Validation Method**: `Use introspect`
-
-11. Click **Add** to save the Key Manager.
+10. Click **Add** to save the Key Manager.
 
 ---
 
@@ -146,8 +132,7 @@ Scopes must be explicitly authorized by an Asgardeo Admin for the OAuth applicat
 
 3. Go to the **API Authorization** tab.
 
-4. Locate the **common API resource** named `APIM_GLOBAL_SCOPES`
-- This resource is automatically authorized when the application is created. It is the scopes inside this API that need explicit authorization.
+4. Click on `+ Authorize API Resource` and authorize the **common API resource** named `APIM_GLOBAL_SCOPES`
 
 5. Under the authorized API resource:
 - Select (allow) the specific scopes that the application should be permitted to request
