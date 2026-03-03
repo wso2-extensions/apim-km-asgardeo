@@ -22,7 +22,6 @@ package org.wso2.asgardeo.client;
  * This class will hold constants related to Asgardeo key manager implementation.
  */
 public class AsgardeoConstants {
-    public static final String UTF_8 = "UTF-8";
     public static final String ASGARDEO_TYPE = "Asgardeo";
     public static final String DISPLAY_NAME = "Asgardeo";
     public static final String ASGARDEO_BASE_URL = "https://api.asgardeo.io";
@@ -38,7 +37,6 @@ public class AsgardeoConstants {
 
     public static final String MANAGEMENT_SCOPES = "internal_dcr_create internal_dcr_view " +
             "internal_dcr_update internal_dcr_delete " +
-            "internal_application_mgt_view internal_application_mgt_update " +
             "internal_api_resource_create internal_api_resource_view " +
             "internal_api_resource_update internal_api_resource_delete " +
             "internal_role_mgt_view internal_role_mgt_create internal_role_mgt_update " +
@@ -58,7 +56,6 @@ public class AsgardeoConstants {
 
     public static final String RESOURCE_MANAGEMENT_ENDPOINT = "asgardeo_api_resource_management_endpoint";
     public static final String ROLES_MANAGEMENT_ENDPOINT = "asgardeo_roles_endpoint";
-    public static final String APPLICATION_MANAGEMENT_ENDPOINT = "asgardeo_application_management_endpoint";
 
     public static final String SEARCH_REQUEST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:SearchRequest";
 

@@ -72,11 +72,6 @@ public class AsgardeoConnectorConfiguration implements KeyManagerConnectorConfig
                 "Client Secret", "input",
                 "Client Secret of the Management Application", "", true, true,
                 Collections.emptyList(), false));
-        configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT,
-                "Asgardeo Application Management Endpoint", "input",
-                String.format("E.g., %s/api/server/v1/applications",
-                        AsgardeoConstants.BASE_URL_FORMAT), "", true, false,
-                Collections.emptyList(), false));
         configurationDtoList.add(new ConfigurationDto(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT,
                 "Asgardeo API Resource Management Endpoint", "input",
                 String.format("E.g., %s/api/server/v1/api-resources",

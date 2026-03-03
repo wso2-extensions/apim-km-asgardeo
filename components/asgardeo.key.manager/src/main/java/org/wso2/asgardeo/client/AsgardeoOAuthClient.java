@@ -142,15 +142,6 @@ public class AsgardeoOAuthClient extends AbstractKeyManager {
             rolesEndpoint = baseURL + "/t/" + org + "/scim2/v2/Roles";
         }
 
-        //  Application management API endpoint and API  resource endpoint
-        String applicationsServerBase;
-        if (configuration.getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT) != null) {
-            applicationsServerBase = (String) configuration
-                    .getParameter(AsgardeoConstants.APPLICATION_MANAGEMENT_ENDPOINT);
-        } else {
-            applicationsServerBase = baseURL + "/t/" + org + "/api/server/v1/application";
-        }
-
         String apiResourceServerBase;
         if (configuration.getParameter(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT) != null) {
             apiResourceServerBase = (String) configuration.getParameter(AsgardeoConstants.RESOURCE_MANAGEMENT_ENDPOINT);
